@@ -161,6 +161,14 @@ function registerIpc() {
     return store.deleteService(id);
   });
 
+  ipcMain.handle('service:move', (_e, id, targetProjectId) => {
+    const service = store.moveService(id, targetProjectId);
+    if (!service) {
+      return { ok: false, error: 'Service atau projek tujuan tidak ditemukan.' };
+    }
+    return { ok: true, service };
+  });
+
   ipcMain.handle('service:run', (_e, id) => {
     const service = store.findService(id);
     if (!service) return { ok: false, error: 'Service tidak ditemukan.' };

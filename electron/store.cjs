@@ -222,6 +222,24 @@ class Store {
     return true;
   }
 
+  moveService(id, targetProjectId) {
+    const found = this.findService(id);
+    if (!found) return null;
+
+    const target = this.getProject(targetProjectId);
+    if (!target) return null;
+    if (found.projectId === targetProjectId) return found;
+
+    const source = this.getProject(found.projectId);
+    const idx = source.services.findIndex((s) => s.id === id);
+    if (idx === -1) return null;
+
+    const [service] = source.services.splice(idx, 1);
+    target.services.push(service);
+    this.save();
+    return service;
+  }
+
   addCommand(data) {
     const command = {
       id: randomUUID(),

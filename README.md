@@ -32,6 +32,8 @@ kamu dari satu layar. Tidak perlu lagi buka banyak tab terminal dan mengetik
   tanpa perlu klik Stop kemudian Run manual.
 - **Aksi projek ala Android** — tombol **Edit** dan **Hapus** tidak selalu tampil.
   Geser item projek ke kiri (swipe) untuk memunculkan dua kotak aksi besar.
+- **Pindah service antar projek** — tarik (drag) kartu service lalu lepas di
+  projek tujuan pada sidebar. Service berpindah tanpa perlu hapus dan buat ulang.
 - **Link service bisa diklik** — setiap service bisa punya link (mis. `http://localhost:3000`)
   yang langsung terbuka di browser default saat diklik.
 - Kelola banyak **Projek**, masing-masing berisi banyak **Service**
@@ -115,6 +117,8 @@ otomatis menjadi `1.2.1`, `1.2.2`, dst. Versi build terakhir dicatat di
 6. Klik **▶ Run** untuk menjalankan, **↻ Restart** untuk restart, **■ Stop** untuk menghentikan.
 7. Klik service untuk melihat log-nya di panel bawah.
 8. Klik **logo** kapan saja untuk kembali ke Beranda.
+9. Untuk memindahkan service ke projek lain, **tarik kartu service** lalu lepas
+   di nama projek tujuan pada sidebar.
 
 ## Contoh command AVD
 

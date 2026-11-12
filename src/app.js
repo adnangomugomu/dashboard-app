@@ -163,6 +163,7 @@ function renderNav() {
 
 const SWIPE_WIDTH = 110;
 let openSwipeId = null;
+let dragServiceId = null;
 
 function closeAllSwipes() {
   document
@@ -288,6 +289,28 @@ function bindProjectSwipe(wrapper, item, project) {
   item.addEventListener('pointercancel', finish);
 }
 
+function bindProjectDrop(wrapper, project) {
+  wrapper.addEventListener('dragover', (e) => {
+    if (!dragServiceId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    wrapper.classList.add('drop-target');
+  });
+
+  wrapper.addEventListener('dragleave', (e) => {
+    if (e.relatedTarget && wrapper.contains(e.relatedTarget)) return;
+    wrapper.classList.remove('drop-target');
+  });
+
+  wrapper.addEventListener('drop', (e) => {
+    if (!dragServiceId) return;
+    e.preventDefault();
+    wrapper.classList.remove('drop-target');
+    const id = e.dataTransfer.getData('text/plain') || dragServiceId;
+    moveServiceToProject(id, project.id);
+  });
+}
+
 function renderProjects() {
   const list = $('projectList');
   list.textContent = '';
@@ -372,6 +395,7 @@ function renderProjects() {
 
     actions.append(editBtn, delBtn);
     bindProjectSwipe(wrapper, item, project);
+    bindProjectDrop(wrapper, project);
 
     wrapper.append(item, actions);
 
@@ -578,7 +602,27 @@ function buildServiceCard(service) {
     'div',
     `service-card${state.serviceId === service.id ? ' selected' : ''}`
   );
+  card.dataset.serviceId = service.id;
+  card.draggable = true;
+  card.title = 'Tarik ke projek lain di sidebar untuk memindahkan service';
   card.addEventListener('click', () => selectService(service.id));
+  card.addEventListener('dragstart', (e) => {
+    if (e.target.closest('button')) {
+      e.preventDefault();
+      return;
+    }
+    dragServiceId = service.id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', service.id);
+    card.classList.add('dragging');
+  });
+  card.addEventListener('dragend', () => {
+    dragServiceId = null;
+    card.classList.remove('dragging');
+    document
+      .querySelectorAll('.project-swipe.drop-target')
+      .forEach((node) => node.classList.remove('drop-target'));
+  });
 
   const statusWrap = el(
     'div',
@@ -840,6 +884,38 @@ async function deleteService(service) {
   delete state.logs[service.id];
   await reload();
   toast('Service dihapus.', 'success');
+}
+
+async function moveServiceToProject(serviceId, projectId) {
+  if (!serviceId) return;
+
+  const source = state.data.projects.find((p) =>
+    p.services.some((s) => s.id === serviceId)
+  );
+  const target = state.data.projects.find((p) => p.id === projectId);
+  if (!source || !target) return;
+
+  const service = source.services.find((s) => s.id === serviceId);
+
+  if (source.id === target.id) {
+    toast(`Service "${service.name}" sudah ada di projek "${target.name}".`, 'info');
+    return;
+  }
+
+  const result = await bridge.moveService(serviceId, projectId);
+  if (!result || !result.ok) {
+    toast((result && result.error) || 'Gagal memindahkan service.', 'error');
+    return;
+  }
+
+  if (state.view === 'project' && state.projectId === projectId) {
+    state.serviceId = serviceId;
+  } else if (state.serviceId === serviceId) {
+    state.serviceId = null;
+  }
+
+  await reload();
+  toast(`"${service.name}" dipindahkan ke "${target.name}".`, 'success');
 }
 
 async function reload() {

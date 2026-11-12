@@ -249,6 +249,13 @@ button {
   background: linear-gradient(180deg, var(--cyan), var(--blue));
 }
 
+.project-swipe.drop-target .project-item {
+  border-color: rgba(47, 214, 255, 0.6);
+  background: rgba(47, 214, 255, 0.14);
+  box-shadow: 0 0 0 1px rgba(47, 214, 255, 0.25),
+    0 0 18px rgba(47, 214, 255, 0.18);
+}
+
 .project-name {
   flex: 1;
   min-width: 0;
@@ -660,8 +667,14 @@ button {
   border-radius: var(--radius);
   border: 1px solid var(--border-soft);
   background: linear-gradient(180deg, #111821 0%, #0e151d 100%);
-  cursor: pointer;
+  cursor: grab;
   transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+
+.service-card.dragging {
+  opacity: 0.45;
+  border-style: dashed;
+  cursor: grabbing;
 }
 
 .service-card:hover {

@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('api', {
   addService: (projectId, data) => ipcRenderer.invoke('service:add', projectId, data),
   updateService: (id, patch) => ipcRenderer.invoke('service:update', id, patch),
   deleteService: (id) => ipcRenderer.invoke('service:delete', id),
+  moveService: (id, projectId) =>
+    ipcRenderer.invoke('service:move', id, projectId),
 
   runService: (id) => ipcRenderer.invoke('service:run', id),
   stopService: (id) => ipcRenderer.invoke('service:stop', id),
