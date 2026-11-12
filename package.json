@@ -1,7 +1,7 @@
 {
   "name": "adnandev-app",
   "productName": "ADNANDEV-APP",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Kelola dan jalankan semua service projek kamu dari satu layar.",
   "main": "electron/main.cjs",
   "author": "AdnanDev",
