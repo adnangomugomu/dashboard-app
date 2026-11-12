@@ -17,7 +17,7 @@ const MAX_BACKUPS = 20;
 class Store {
   constructor(file) {
     this.file = file;
-    this.data = { projects: [] };
+    this.data = { projects: [], commands: [] };
     this.load();
   }
 
@@ -31,6 +31,7 @@ class Store {
       const parsed = JSON.parse(raw);
       this.data = {
         projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+        commands: Array.isArray(parsed.commands) ? parsed.commands : [],
       };
     } catch {
       const recovered = this.loadLatestBackup();
@@ -39,7 +40,7 @@ class Store {
         this.write();
         console.log('[store] config rusak, dipulihkan dari backup terbaru');
       } else {
-        this.data = { projects: [] };
+        this.data = { projects: [], commands: [] };
         this.write();
       }
     }
@@ -116,7 +117,10 @@ class Store {
           fs.readFileSync(path.join(this.backupsDir, name), 'utf8')
         );
         if (Array.isArray(parsed.projects)) {
-          return { projects: parsed.projects };
+          return {
+            projects: parsed.projects,
+            commands: Array.isArray(parsed.commands) ? parsed.commands : [],
+          };
         }
       } catch {
         /* coba backup berikutnya */
@@ -218,9 +222,41 @@ class Store {
     return true;
   }
 
+  addCommand(data) {
+    const command = {
+      id: randomUUID(),
+      name: String(data.name).trim(),
+      command: String(data.command).trim(),
+      createdAt: new Date().toISOString(),
+    };
+    this.data.commands.push(command);
+    this.save();
+    return command;
+  }
+
+  updateCommand(id, patch) {
+    const command = this.data.commands.find((c) => c.id === id);
+    if (!command) return null;
+    if (patch.name != null) command.name = String(patch.name).trim();
+    if (patch.command != null) {
+      command.command = String(patch.command).trim();
+    }
+    this.save();
+    return command;
+  }
+
+  deleteCommand(id) {
+    const idx = this.data.commands.findIndex((c) => c.id === id);
+    if (idx === -1) return false;
+    this.data.commands.splice(idx, 1);
+    this.save();
+    return true;
+  }
+
   replaceData(parsed) {
     this.data = {
       projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+      commands: Array.isArray(parsed.commands) ? parsed.commands : [],
     };
     this.save();
     return this.data;

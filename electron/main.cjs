@@ -212,6 +212,11 @@ function registerIpc() {
     }
     return runner.run(cmd);
   });
+  ipcMain.handle('command:add', (_e, data) => store.addCommand(data));
+  ipcMain.handle('command:update', (_e, id, patch) =>
+    store.updateCommand(id, patch)
+  );
+  ipcMain.handle('command:delete', (_e, id) => store.deleteCommand(id));
   ipcMain.handle('command:stop', () => runner.stop());
   ipcMain.handle('command:clear', () => {
     runner.clear();

@@ -3,7 +3,7 @@
 const bridge = window.api;
 
 const state = {
-  data: { projects: [] },
+  data: { projects: [], commands: [] },
   view: 'home',
   projectId: null,
   serviceId: null,
@@ -43,30 +43,6 @@ const SERVICE_ICONS = [
   { id: 'chart', emoji: '📊', label: 'Monitoring' },
   { id: 'gear', emoji: '⚙️', label: 'Worker' },
   { id: 'fire', emoji: '🔥', label: 'Queue' },
-];
-
-const LINUX_COMMANDS = [
-  { group: 'Sistem', icon: '🖥️', name: 'Info sistem', command: 'uname -a' },
-  { group: 'Sistem', icon: '🧾', name: 'Detail OS', command: 'hostnamectl' },
-  { group: 'Sistem', icon: '⏱️', name: 'Uptime', command: 'uptime -p' },
-  { group: 'Disk & Memori', icon: '💽', name: 'Penggunaan disk', command: 'df -h' },
-  { group: 'Disk & Memori', icon: '🧠', name: 'Penggunaan memori', command: 'free -h' },
-  { group: 'Disk & Memori', icon: '🗂️', name: 'Block device', command: 'lsblk -f' },
-  { group: 'CPU & Proses', icon: '📈', name: 'Top proses CPU', command: 'top -b -n1 | head -25' },
-  { group: 'CPU & Proses', icon: '🔥', name: 'Proses terberat (CPU)', command: 'ps aux --sort=-%cpu | head -15' },
-  { group: 'CPU & Proses', icon: '🧮', name: 'Proses terberat (RAM)', command: 'ps aux --sort=-%mem | head -15' },
-  { group: 'Jaringan', icon: '🌐', name: 'IP address', command: 'ip -brief addr' },
-  { group: 'Jaringan', icon: '🔌', name: 'Port terbuka', command: 'ss -tulpn' },
-  { group: 'Jaringan', icon: '📡', name: 'Ping 8.8.8.8', command: 'ping -c 3 8.8.8.8' },
-  { group: 'Jaringan', icon: '🌍', name: 'IP publik', command: 'curl -s --max-time 8 ifconfig.me; echo' },
-  { group: 'Service & Log', icon: '⚙️', name: 'Service gagal', command: 'systemctl --failed --no-pager' },
-  { group: 'Service & Log', icon: '✅', name: 'Service berjalan', command: 'systemctl list-units --type=service --state=running --no-pager | head -25' },
-  { group: 'Service & Log', icon: '📜', name: 'Log error boot', command: 'journalctl -p 3 -b --no-pager | tail -40' },
-  { group: 'Docker', icon: '🐳', name: 'Container aktif', command: 'docker ps' },
-  { group: 'Docker', icon: '📊', name: 'Statistik container', command: 'docker stats --no-stream' },
-  { group: 'Lainnya', icon: '👤', name: 'User login', command: 'who' },
-  { group: 'Lainnya', icon: '🕘', name: 'Login terakhir', command: 'last -n 10' },
-  { group: 'Lainnya', icon: '🟢', name: 'Versi Node & npm', command: 'node -v && npm -v' },
 ];
 
 let commandBuffer = '';
@@ -393,7 +369,8 @@ function renderHeader() {
 
   if (state.view === 'commands') {
     $('projectTitle').textContent = 'Command Linux';
-    $('projectSub').textContent = 'Klik Run untuk menjalankan perintah Linux.';
+    $('projectSub').textContent =
+      'Simpan command Linux-mu, lalu jalankan kapan saja.';
     actions.hidden = true;
     return;
   }
@@ -1158,51 +1135,106 @@ async function backupConfig() {
 // ---------------------------------------------------------------- command linux
 
 function renderCommands() {
-  const scroll = $('commandsScroll');
+  const list = $('commandList');
+  const empty = $('commandEmpty');
+  const commands = state.data.commands || [];
 
-  if (!scroll.dataset.built) {
-    scroll.textContent = '';
-    const groups = new Map();
-    for (const item of LINUX_COMMANDS) {
-      if (!groups.has(item.group)) groups.set(item.group, []);
-      groups.get(item.group).push(item);
-    }
+  list.textContent = '';
+  empty.hidden = commands.length > 0;
+  list.hidden = commands.length === 0;
 
-    for (const [group, items] of groups) {
-      const section = el('div', 'cmd-group');
-      section.append(el('h3', null, group));
-      const grid = el('div', 'cmd-grid');
-
-      for (const item of items) {
-        const card = el('button', 'cmd-card');
-        card.type = 'button';
-        card.dataset.command = item.command;
-        card.title = item.command;
-
-        const info = el('span', 'cmd-info');
-        info.append(
-          el('strong', null, item.name),
-          el('code', null, item.command)
-        );
-
-        card.append(
-          el('span', 'cmd-icon', item.icon),
-          info,
-          el('span', 'cmd-run', '▶')
-        );
-
-        card.addEventListener('click', () => runLinuxCommand(item.command));
-        grid.append(card);
-      }
-
-      section.append(grid);
-      scroll.append(section);
-    }
-
-    scroll.dataset.built = '1';
+  for (const command of commands) {
+    list.append(buildSavedCommand(command));
   }
 
   updateCommandUi();
+}
+
+function buildSavedCommand(command) {
+  const card = el('div', 'saved-command');
+  const icon = el('div', 'saved-command-icon', '⌨️');
+
+  const info = el('div', 'saved-command-info');
+  info.append(
+    el('strong', null, command.name),
+    el('code', null, command.command)
+  );
+
+  const actions = el('div', 'saved-command-actions');
+
+  const runBtn = el('button', 'btn btn-run', '▶ Run');
+  runBtn.type = 'button';
+  runBtn.title = 'Jalankan command';
+  runBtn.addEventListener('click', () => runLinuxCommand(command.command));
+
+  const editBtn = el('button', 'btn tiny', '✎');
+  editBtn.type = 'button';
+  editBtn.title = 'Ubah command';
+  editBtn.addEventListener('click', () => openCommandModal(command));
+
+  const delBtn = el('button', 'btn tiny danger', '🗑');
+  delBtn.type = 'button';
+  delBtn.title = 'Hapus command';
+  delBtn.addEventListener('click', () => deleteSavedCommand(command));
+
+  actions.append(runBtn, editBtn, delBtn);
+  card.append(icon, info, actions);
+  return card;
+}
+
+function openCommandModal(command) {
+  const isEdit = Boolean(command);
+
+  const nameInput = makeInput('text', {
+    placeholder: 'Contoh: Buka AVD Pixel 7',
+    value: isEdit ? command.name : '',
+    required: true,
+  });
+
+  const commandInput = makeInput('text', {
+    placeholder: 'emulator -avd Pixel_7_API_34',
+    value: isEdit ? command.command : '',
+    required: true,
+  });
+
+  const form = el('form', 'modal-form');
+  form.append(
+    makeField('Nama command', nameInput, 'Nama untuk mengenali command ini.'),
+    makeField(
+      'Command',
+      commandInput,
+      'Contoh AVD: emulator -avd <nama_avd> · wipe data: emulator -avd <nama_avd> -wipe-data'
+    )
+  );
+
+  mountModal(form, {
+    title: isEdit ? 'Ubah command' : 'Tambah command',
+    subtitle: 'Simpan command untuk dijalankan kapan saja.',
+    submitLabel: isEdit ? 'Simpan perubahan' : 'Tambah command',
+    onSubmit: async () => {
+      const name = nameInput.value.trim();
+      const value = commandInput.value.trim();
+      if (!name) throw new Error('Nama command wajib diisi.');
+      if (!value) throw new Error('Command wajib diisi.');
+
+      if (isEdit) {
+        await bridge.updateCommand(command.id, { name, command: value });
+      } else {
+        await bridge.addCommand({ name, command: value });
+      }
+      await reload();
+      return true;
+    },
+  });
+}
+
+async function deleteSavedCommand(command) {
+  const ok = window.confirm(`Hapus command "${command.name}"?`);
+  if (!ok) return;
+
+  await bridge.deleteCommand(command.id);
+  await reload();
+  toast('Command dihapus.', 'success');
 }
 
 function updateCommandUi() {
@@ -1394,6 +1426,8 @@ function bindStatic() {
   $('cmdStopBtn').addEventListener('click', stopLinuxCommand);
   $('cmdClearBtn').addEventListener('click', clearCommandOutput);
   $('cmdRunCustomBtn').addEventListener('click', runCustomCommand);
+  $('addCommandBtn').addEventListener('click', () => openCommandModal());
+  $('emptyAddCommandBtn').addEventListener('click', () => openCommandModal());
   $('cmdInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();

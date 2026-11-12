@@ -17,9 +17,10 @@ kamu dari satu layar. Tidak perlu lagi buka banyak tab terminal dan mengetik
 ## Fitur
 
 - **Menu tetap di sidebar**
-  - **Command Linux** — 21 command Linux siap pakai (sistem, disk, memori,
-    CPU, jaringan, service, Docker, dll). Cukup klik **Run**, output tampil
-    di panel bawah. Ada juga kolom untuk menjalankan command custom.
+  - **Command Linux** — simpan command Linux milikmu sendiri (nama + command),
+    lalu jalankan kapan saja. Cocok untuk membuka AVD, wipe data AVD, dan
+    command rutin lainnya. Ada juga kolom untuk menjalankan command cepat
+    tanpa menyimpan.
   - **Monitoring Sistem** — `btop` berjalan otomatis saat aplikasi dibuka dan
     terus hidup sampai aplikasi ditutup. Terminal interaktif langsung di dalam
     aplikasi, lengkap dengan tombol **Jalankan ulang**.
@@ -111,6 +112,17 @@ otomatis menjadi `1.2.1`, `1.2.2`, dst. Versi build terakhir dicatat di
 6. Klik **▶ Run** untuk menjalankan, **↻ Restart** untuk restart, **■ Stop** untuk menghentikan.
 7. Klik service untuk melihat log-nya di panel bawah.
 8. Klik **logo** kapan saja untuk kembali ke Beranda.
+
+## Contoh command AVD
+
+Di menu **Command Linux** → **+ Tambah Command**:
+
+| Nama | Command |
+|---|---|
+| Buka AVD Pixel 7 | `emulator -avd Pixel_7_API_34` |
+| Wipe data AVD Pixel 7 | `emulator -avd Pixel_7_API_34 -wipe-data` |
+
+Sesuaikan `Pixel_7_API_34` dengan nama AVD kamu (`emulator -list-avds`).
 
 ## Lokasi konfigurasi & backup
 

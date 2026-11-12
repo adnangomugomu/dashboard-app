@@ -116,7 +116,26 @@
         </section>
 
         <section id="commandsView" class="commands-view" hidden>
-          <div id="commandsScroll" class="commands-scroll"></div>
+          <div class="cmd-toolbar">
+            <div>
+              <h2>Command Saya</h2>
+              <p>Simpan command dan jalankan kapan saja.</p>
+            </div>
+            <button class="btn primary" id="addCommandBtn" type="button">
+              + Tambah Command
+            </button>
+          </div>
+
+          <div id="commandsScroll" class="commands-scroll">
+            <div id="commandList" class="saved-command-list"></div>
+
+            <div id="commandEmpty" class="cmd-empty" hidden>
+              <p>Belum ada command tersimpan.</p>
+              <button class="btn primary" id="emptyAddCommandBtn" type="button">
+                + Tambah Command
+              </button>
+            </div>
+          </div>
 
           <div class="cmd-output">
             <div class="cmd-output-head">
@@ -129,7 +148,7 @@
             </div>
             <pre id="cmdOutput" class="log-view">Pilih command untuk dijalankan…</pre>
             <div class="cmd-custom">
-              <input id="cmdInput" type="text" placeholder="Atau ketik command lain…" />
+              <input id="cmdInput" type="text" placeholder="Atau jalankan command cepat (tanpa simpan)…" />
               <button class="btn primary" id="cmdRunCustomBtn" type="button">Run</button>
             </div>
           </div>

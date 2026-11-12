@@ -34,6 +34,10 @@ contextBridge.exposeInMainWorld('api', {
   monitorStatus: () => ipcRenderer.invoke('monitor:status'),
 
   runCommand: (command) => ipcRenderer.invoke('command:run', command),
+  addCommand: (data) => ipcRenderer.invoke('command:add', data),
+  updateCommand: (id, patch) =>
+    ipcRenderer.invoke('command:update', id, patch),
+  deleteCommand: (id) => ipcRenderer.invoke('command:delete', id),
   stopCommand: () => ipcRenderer.invoke('command:stop'),
   clearCommand: () => ipcRenderer.invoke('command:clear'),
   commandStatus: () => ipcRenderer.invoke('command:status'),
