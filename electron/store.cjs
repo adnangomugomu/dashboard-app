@@ -227,6 +227,7 @@ class Store {
       id: randomUUID(),
       name: String(data.name).trim(),
       command: String(data.command).trim(),
+      icon: data.icon ? String(data.icon).slice(0, 16) : null,
       createdAt: new Date().toISOString(),
     };
     this.data.commands.push(command);
@@ -240,6 +241,9 @@ class Store {
     if (patch.name != null) command.name = String(patch.name).trim();
     if (patch.command != null) {
       command.command = String(patch.command).trim();
+    }
+    if (patch.icon !== undefined) {
+      command.icon = patch.icon ? String(patch.icon).slice(0, 16) : null;
     }
     this.save();
     return command;

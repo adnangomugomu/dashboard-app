@@ -19,8 +19,8 @@ kamu dari satu layar. Tidak perlu lagi buka banyak tab terminal dan mengetik
 - **Menu tetap di sidebar**
   - **Command Linux** — simpan command Linux milikmu sendiri (nama + command),
     lalu jalankan kapan saja. Cocok untuk membuka AVD, wipe data AVD, dan
-    command rutin lainnya. Ada juga kolom untuk menjalankan command cepat
-    tanpa menyimpan.
+    command rutin lainnya. Setiap command bisa diberi ikon agar mudah dikenali.
+    Ada juga kolom untuk menjalankan command cepat tanpa menyimpan.
   - **Monitoring Sistem** — `btop` berjalan otomatis saat aplikasi dibuka dan
     terus hidup sampai aplikasi ditutup. Terminal interaktif langsung di dalam
     aplikasi.

@@ -45,6 +45,25 @@ const SERVICE_ICONS = [
   { id: 'fire', emoji: '🔥', label: 'Queue' },
 ];
 
+const COMMAND_ICONS = [
+  { id: 'terminal', emoji: '⌨️', label: 'Terminal' },
+  { id: 'android', emoji: '📱', label: 'Android / AVD' },
+  { id: 'wipe', emoji: '🧹', label: 'Wipe / Bersihkan' },
+  { id: 'rocket', emoji: '🚀', label: 'Jalankan' },
+  { id: 'gear', emoji: '⚙️', label: 'Konfigurasi' },
+  { id: 'database', emoji: '🗄️', label: 'Database' },
+  { id: 'docker', emoji: '🐳', label: 'Docker' },
+  { id: 'server', emoji: '🖥️', label: 'Server' },
+  { id: 'cloud', emoji: '☁️', label: 'Cloud' },
+  { id: 'globe', emoji: '🌐', label: 'Network' },
+  { id: 'bolt', emoji: '⚡', label: 'Cepat' },
+  { id: 'fire', emoji: '🔥', label: 'Proses' },
+  { id: 'chart', emoji: '📊', label: 'Monitoring' },
+  { id: 'package', emoji: '📦', label: 'Package' },
+  { id: 'tools', emoji: '🛠️', label: 'Tools' },
+  { id: 'mobile', emoji: '📲', label: 'Mobile' },
+];
+
 let commandBuffer = '';
 let commandStatus = 'stopped';
 
@@ -858,17 +877,23 @@ function makeField(label, input, hint) {
   return wrap;
 }
 
-function makeIconField(selected, onChange) {
+function makeIconField(
+  selected,
+  onChange,
+  icons = SERVICE_ICONS,
+  options = {}
+) {
+  const { allowNone = true, label = 'Ikon service' } = options;
+
   const wrap = el('div', 'field');
-  wrap.append(el('span', null, 'Ikon service'));
+  wrap.append(el('span', null, label));
 
   const grid = el('div', 'icon-grid');
-  const options = [
-    { id: 'none', emoji: '', label: 'Tanpa ikon' },
-    ...SERVICE_ICONS,
-  ];
+  const items = allowNone
+    ? [{ id: 'none', emoji: '', label: 'Tanpa ikon' }, ...icons]
+    : icons;
 
-  for (const option of options) {
+  for (const option of items) {
     const btn = el(
       'button',
       `icon-option${selected === option.emoji ? ' selected' : ''}`,
@@ -1152,7 +1177,7 @@ function renderCommands() {
 
 function buildSavedCommand(command) {
   const card = el('div', 'saved-command');
-  const icon = el('div', 'saved-command-icon', '⌨️');
+  const icon = el('div', 'saved-command-icon', command.icon || '⌨️');
 
   const info = el('div', 'saved-command-info');
   info.append(
@@ -1197,9 +1222,20 @@ function openCommandModal(command) {
     required: true,
   });
 
+  let selectedIcon = isEdit && command.icon ? command.icon : '⌨️';
+  const iconField = makeIconField(
+    selectedIcon,
+    (value) => {
+      selectedIcon = value;
+    },
+    COMMAND_ICONS,
+    { allowNone: false, label: 'Ikon command' }
+  );
+
   const form = el('form', 'modal-form');
   form.append(
     makeField('Nama command', nameInput, 'Nama untuk mengenali command ini.'),
+    iconField,
     makeField(
       'Command',
       commandInput,
@@ -1218,9 +1254,17 @@ function openCommandModal(command) {
       if (!value) throw new Error('Command wajib diisi.');
 
       if (isEdit) {
-        await bridge.updateCommand(command.id, { name, command: value });
+        await bridge.updateCommand(command.id, {
+          name,
+          command: value,
+          icon: selectedIcon || null,
+        });
       } else {
-        await bridge.addCommand({ name, command: value });
+        await bridge.addCommand({
+          name,
+          command: value,
+          icon: selectedIcon || '⌨️',
+        });
       }
       await reload();
       return true;
