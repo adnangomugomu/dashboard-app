@@ -44,7 +44,10 @@ kamu dari satu layar. Tidak perlu lagi buka banyak tab terminal dan mengetik
 - Stop mematikan **seluruh process tree** — tidak ada proses `npm`/`node`
   yang tertinggal.
 - Konfigurasi tersimpan otomatis ke file JSON.
-- Semua service berhenti otomatis saat aplikasi ditutup.
+- **Hidup di system tray** — tombol close hanya menyembunyikan window; service
+  dan monitoring tetap berjalan. Buka lagi lewat ikon tray (atau shortcut app),
+  dan pilih **Keluar** di menu tray untuk benar-benar menutup aplikasi.
+- Semua service berhenti otomatis saat aplikasi benar-benar ditutup (Keluar).
 
 ## Menjalankan (mode development)
 

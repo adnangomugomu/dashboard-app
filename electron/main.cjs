@@ -1,6 +1,16 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  shell,
+  Tray,
+  Menu,
+  nativeImage,
+  Notification,
+} = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 
@@ -12,6 +22,9 @@ const CommandRunner = require('./command-runner.cjs');
 app.setName('ADNANDEV-APP');
 
 let mainWindow = null;
+let tray = null;
+let isQuitting = false;
+let trayHintShown = false;
 let store = null;
 let pm = null;
 let monitor = null;
@@ -20,6 +33,65 @@ let runner = null;
 function send(channel, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send(channel, payload);
+  }
+}
+
+function showWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+    return;
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  if (!mainWindow.isVisible()) mainWindow.show();
+  mainWindow.focus();
+}
+
+function createTray() {
+  if (tray) return;
+
+  const iconPath = path.join(__dirname, '..', 'assets', 'icon.png');
+  let icon = nativeImage.createFromPath(iconPath);
+  if (!icon.isEmpty()) {
+    icon = icon.resize({ width: 22, height: 22, quality: 'best' });
+  }
+
+  tray = new Tray(icon);
+  tray.setToolTip('ADNANDEV-APP — monitoring service');
+
+  const menu = Menu.buildFromTemplate([
+    { label: 'Buka ADNANDEV-APP', click: () => showWindow() },
+    { type: 'separator' },
+    {
+      label: 'Keluar',
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      },
+    },
+  ]);
+  tray.setContextMenu(menu);
+
+  tray.on('click', () => showWindow());
+  tray.on('double-click', () => showWindow());
+}
+
+function hideToTray() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.hide();
+
+  if (!trayHintShown) {
+    trayHintShown = true;
+    try {
+      if (Notification.isSupported()) {
+        new Notification({
+          title: 'ADNANDEV-APP masih berjalan',
+          body: 'Aplikasi dipindahkan ke system tray. Klik ikon tray untuk membuka, atau pilih "Keluar" untuk menghentikan.',
+          icon: path.join(__dirname, '..', 'assets', 'icon.png'),
+        }).show();
+      }
+    } catch {
+      // Notifikasi opsional; abaikan bila desktop tidak mendukung.
+    }
   }
 }
 
@@ -52,6 +124,13 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, '..', 'src', 'index.html'));
+
+  // Tombol close = sembunyikan ke tray, bukan keluar.
+  mainWindow.on('close', (event) => {
+    if (isQuitting) return;
+    event.preventDefault();
+    hideToTray();
+  });
 
   // Buka link eksternal di browser, bukan di dalam app.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -239,50 +318,67 @@ function registerIpc() {
   ipcMain.handle('command:status', () => runner.status());
 }
 
-app.whenReady().then(() => {
-  const configPath = process.env.ADNANDEV_CONFIG
-    ? path.resolve(process.env.ADNANDEV_CONFIG)
-    : path.join(app.getPath('userData'), 'config.json');
-
-  store = new Store(configPath);
-  pm = new ProcessManager();
-  monitor = new MonitorManager();
-  runner = new CommandRunner();
-
-  monitor.on('data', (data) => send('monitor:data', data));
-  monitor.on('exit', (payload) => send('monitor:exit', payload));
-
-  runner.on('data', (data) => send('command:data', data));
-  runner.on('start', (payload) => send('command:start', payload));
-  runner.on('exit', (payload) => send('command:exit', payload));
-  runner.on('error', (payload) => send('command:error', payload));
-
-  pm.on('log', ({ id, text }) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('service:log', { id, text });
-    }
+// Hanya boleh satu instance. Saat app dibuka lagi, tampilkan window yang ada.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    showWindow();
   });
 
-  pm.on('status', (payload) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('service:status', payload);
-    }
+  app.whenReady().then(() => {
+    const configPath = process.env.ADNANDEV_CONFIG
+      ? path.resolve(process.env.ADNANDEV_CONFIG)
+      : path.join(app.getPath('userData'), 'config.json');
+
+    store = new Store(configPath);
+    pm = new ProcessManager();
+    monitor = new MonitorManager();
+    runner = new CommandRunner();
+
+    monitor.on('data', (data) => send('monitor:data', data));
+    monitor.on('exit', (payload) => send('monitor:exit', payload));
+
+    runner.on('data', (data) => send('command:data', data));
+    runner.on('start', (payload) => send('command:start', payload));
+    runner.on('exit', (payload) => send('command:exit', payload));
+    runner.on('error', (payload) => send('command:error', payload));
+
+    pm.on('log', ({ id, text }) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('service:log', { id, text });
+      }
+    });
+
+    pm.on('status', (payload) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('service:status', payload);
+      }
+    });
+
+    registerIpc();
+    createTray();
+    createWindow();
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+      else showWindow();
+    });
   });
+}
 
-  registerIpc();
-  createWindow();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
-
+// Jangan keluar saat semua window ditutup: aplikasi hidup di system tray.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  // Biarkan tetap berjalan; keluar hanya lewat menu tray "Keluar".
 });
 
 // Pastikan semua proses service dimatikan saat aplikasi ditutup.
 app.on('before-quit', () => {
+  isQuitting = true;
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
   if (pm) pm.stopAll();
   if (monitor) monitor.stop();
   if (runner) runner.stop();
@@ -291,6 +387,7 @@ app.on('before-quit', () => {
 // Bersihkan proses juga saat aplikasi dihentikan lewat sinyal (mis. kill).
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
   process.on(signal, () => {
+    isQuitting = true;
     if (pm) pm.stopAll();
     if (monitor) monitor.stop();
     if (runner) runner.stop();
