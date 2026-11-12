@@ -133,7 +133,7 @@ src/
   app.js              # UI + interaksi
 assets/
   logo-original.png   # wordmark AdnanDev (dari logo asli)
-  icon.svg / icon.png # ikon aplikasi
+  icon.png            # ikon aplikasi (huruf A dari logo)
 logo-line.webp        # file logo sumber
 PRD.md
 ```
