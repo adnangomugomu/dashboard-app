@@ -119,6 +119,50 @@ button {
   font-weight: 700;
 }
 
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px 10px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.nav-item:hover {
+  background: #121a24;
+}
+
+.nav-item.active {
+  background: linear-gradient(
+    90deg,
+    rgba(47, 214, 255, 0.12),
+    rgba(47, 123, 255, 0.06)
+  );
+  border-color: rgba(47, 214, 255, 0.28);
+  color: var(--cyan);
+}
+
+.nav-icon {
+  width: 20px;
+  text-align: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
 .icon-btn {
   width: 28px;
   height: 28px;
@@ -831,6 +875,193 @@ button {
   font-size: 13px;
   max-width: 380px;
   line-height: 1.5;
+}
+
+/* ============ COMMAND LINUX ============ */
+.commands-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 28px 16px;
+}
+
+.commands-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-right: 4px;
+}
+
+.cmd-group h3 {
+  margin: 0 0 8px;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  font-weight: 700;
+}
+
+.cmd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+.cmd-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(180deg, #111821 0%, #0d141c 100%);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.cmd-card:hover {
+  border-color: rgba(47, 214, 255, 0.35);
+  background: #121a24;
+}
+
+.cmd-icon {
+  width: 26px;
+  text-align: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.cmd-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cmd-info strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cmd-info code {
+  font-family: "JetBrains Mono", "Fira Code", "DejaVu Sans Mono", monospace;
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmd-run {
+  color: var(--cyan);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.cmd-output {
+  height: 300px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: #070a0f;
+  overflow: hidden;
+}
+
+.cmd-output-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  background: #0a0e14;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cmd-output-head #cmdTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmd-output-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.cmd-output .log-view {
+  padding: 10px 14px;
+}
+
+.cmd-custom {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-soft);
+  background: #0a0e14;
+}
+
+.cmd-custom input {
+  flex: 1;
+  background: #0a0f16;
+  border: 1px solid #26313f;
+  border-radius: 8px;
+  color: var(--text);
+  padding: 7px 10px;
+  font-size: 12px;
+  outline: none;
+}
+
+.cmd-custom input:focus {
+  border-color: var(--cyan);
+}
+
+/* ============ MONITORING (btop) ============ */
+.monitor-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 20px 16px;
+}
+
+.monitor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.monitor-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.monitor-terminal {
+  flex: 1;
+  min-height: 0;
+  background: #05070a;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.monitor-terminal .xterm {
+  height: 100%;
 }
 
 /* ============ LOG PANEL ============ */

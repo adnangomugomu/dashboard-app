@@ -45,6 +45,39 @@ const SERVICE_ICONS = [
   { id: 'fire', emoji: '🔥', label: 'Queue' },
 ];
 
+const LINUX_COMMANDS = [
+  { group: 'Sistem', icon: '🖥️', name: 'Info sistem', command: 'uname -a' },
+  { group: 'Sistem', icon: '🧾', name: 'Detail OS', command: 'hostnamectl' },
+  { group: 'Sistem', icon: '⏱️', name: 'Uptime', command: 'uptime -p' },
+  { group: 'Disk & Memori', icon: '💽', name: 'Penggunaan disk', command: 'df -h' },
+  { group: 'Disk & Memori', icon: '🧠', name: 'Penggunaan memori', command: 'free -h' },
+  { group: 'Disk & Memori', icon: '🗂️', name: 'Block device', command: 'lsblk -f' },
+  { group: 'CPU & Proses', icon: '📈', name: 'Top proses CPU', command: 'top -b -n1 | head -25' },
+  { group: 'CPU & Proses', icon: '🔥', name: 'Proses terberat (CPU)', command: 'ps aux --sort=-%cpu | head -15' },
+  { group: 'CPU & Proses', icon: '🧮', name: 'Proses terberat (RAM)', command: 'ps aux --sort=-%mem | head -15' },
+  { group: 'Jaringan', icon: '🌐', name: 'IP address', command: 'ip -brief addr' },
+  { group: 'Jaringan', icon: '🔌', name: 'Port terbuka', command: 'ss -tulpn' },
+  { group: 'Jaringan', icon: '📡', name: 'Ping 8.8.8.8', command: 'ping -c 3 8.8.8.8' },
+  { group: 'Jaringan', icon: '🌍', name: 'IP publik', command: 'curl -s --max-time 8 ifconfig.me; echo' },
+  { group: 'Service & Log', icon: '⚙️', name: 'Service gagal', command: 'systemctl --failed --no-pager' },
+  { group: 'Service & Log', icon: '✅', name: 'Service berjalan', command: 'systemctl list-units --type=service --state=running --no-pager | head -25' },
+  { group: 'Service & Log', icon: '📜', name: 'Log error boot', command: 'journalctl -p 3 -b --no-pager | tail -40' },
+  { group: 'Docker', icon: '🐳', name: 'Container aktif', command: 'docker ps' },
+  { group: 'Docker', icon: '📊', name: 'Statistik container', command: 'docker stats --no-stream' },
+  { group: 'Lainnya', icon: '👤', name: 'User login', command: 'who' },
+  { group: 'Lainnya', icon: '🕘', name: 'Login terakhir', command: 'last -n 10' },
+  { group: 'Lainnya', icon: '🟢', name: 'Versi Node & npm', command: 'node -v && npm -v' },
+];
+
+let commandBuffer = '';
+let commandStatus = 'stopped';
+
+let monitorBuffer = '';
+let monitorTerm = null;
+let monitorFit = null;
+let monitorError = null;
+let monitorRunning = false;
+
 const STATUS_LABEL = {
   stopped: 'Stopped',
   starting: 'Starting',
@@ -120,11 +153,17 @@ function toast(message, type = 'info') {
 // ---------------------------------------------------------------- render
 
 function renderAll() {
+  renderNav();
   renderProjects();
   renderHeader();
   renderServices();
   renderLogHeader();
   renderLogContent();
+}
+
+function renderNav() {
+  $('navCommands').classList.toggle('active', state.view === 'commands');
+  $('navMonitor').classList.toggle('active', state.view === 'monitor');
 }
 
 const SWIPE_WIDTH = 110;
@@ -352,6 +391,21 @@ function renderProjects() {
 function renderHeader() {
   const actions = $('projectActions');
 
+  if (state.view === 'commands') {
+    $('projectTitle').textContent = 'Command Linux';
+    $('projectSub').textContent = 'Klik Run untuk menjalankan perintah Linux.';
+    actions.hidden = true;
+    return;
+  }
+
+  if (state.view === 'monitor') {
+    $('projectTitle').textContent = 'Monitoring Sistem';
+    $('projectSub').textContent =
+      'btop berjalan otomatis selama aplikasi terbuka.';
+    actions.hidden = true;
+    return;
+  }
+
   if (state.view === 'home') {
     const projects = state.data.projects;
     const services = projects.flatMap((p) => p.services);
@@ -383,6 +437,31 @@ function renderServices() {
   const list = $('serviceList');
   const home = $('homeView');
   const logPanel = $('logPanel');
+  const projectArea = $('projectArea');
+  const commandsView = $('commandsView');
+  const monitorView = $('monitorView');
+
+  if (state.view === 'commands') {
+    projectArea.hidden = true;
+    commandsView.hidden = false;
+    monitorView.hidden = true;
+    logPanel.hidden = true;
+    renderCommands();
+    return;
+  }
+
+  if (state.view === 'monitor') {
+    projectArea.hidden = true;
+    commandsView.hidden = true;
+    monitorView.hidden = false;
+    logPanel.hidden = true;
+    renderMonitor();
+    return;
+  }
+
+  projectArea.hidden = false;
+  commandsView.hidden = true;
+  monitorView.hidden = true;
 
   if (state.view === 'home') {
     list.textContent = '';
@@ -641,6 +720,16 @@ function goHome() {
   state.view = 'home';
   state.projectId = null;
   state.serviceId = null;
+  renderAll();
+}
+
+function openCommands() {
+  state.view = 'commands';
+  renderAll();
+}
+
+function openMonitor() {
+  state.view = 'monitor';
   renderAll();
 }
 
@@ -1066,8 +1155,223 @@ async function backupConfig() {
   }
 }
 
+// ---------------------------------------------------------------- command linux
+
+function renderCommands() {
+  const scroll = $('commandsScroll');
+
+  if (!scroll.dataset.built) {
+    scroll.textContent = '';
+    const groups = new Map();
+    for (const item of LINUX_COMMANDS) {
+      if (!groups.has(item.group)) groups.set(item.group, []);
+      groups.get(item.group).push(item);
+    }
+
+    for (const [group, items] of groups) {
+      const section = el('div', 'cmd-group');
+      section.append(el('h3', null, group));
+      const grid = el('div', 'cmd-grid');
+
+      for (const item of items) {
+        const card = el('button', 'cmd-card');
+        card.type = 'button';
+        card.dataset.command = item.command;
+        card.title = item.command;
+
+        const info = el('span', 'cmd-info');
+        info.append(
+          el('strong', null, item.name),
+          el('code', null, item.command)
+        );
+
+        card.append(
+          el('span', 'cmd-icon', item.icon),
+          info,
+          el('span', 'cmd-run', '▶')
+        );
+
+        card.addEventListener('click', () => runLinuxCommand(item.command));
+        grid.append(card);
+      }
+
+      section.append(grid);
+      scroll.append(section);
+    }
+
+    scroll.dataset.built = '1';
+  }
+
+  updateCommandUi();
+}
+
+function updateCommandUi() {
+  $('cmdDot').className = `status-dot ${commandStatus}`;
+  $('cmdStopBtn').disabled = commandStatus !== 'running';
+}
+
+function appendCommandOutput(text) {
+  const clean = stripAnsi(text);
+  if (!clean) return;
+
+  commandBuffer += clean;
+  if (commandBuffer.length > 450000) {
+    commandBuffer = commandBuffer.slice(-350000);
+  }
+
+  const out = $('cmdOutput');
+  const nearBottom =
+    out.scrollHeight - out.scrollTop - out.clientHeight < 80;
+
+  out.appendChild(document.createTextNode(clean));
+  if (out.textContent.length > 500000) out.textContent = commandBuffer;
+  if (nearBottom) out.scrollTop = out.scrollHeight;
+}
+
+async function runLinuxCommand(command) {
+  const cmd = String(command || '').trim();
+  if (!cmd) return;
+
+  commandBuffer = '';
+  commandStatus = 'running';
+  $('cmdOutput').textContent = `$ ${cmd}\n\n`;
+  $('cmdTitle').textContent = cmd;
+  updateCommandUi();
+
+  const result = await bridge.runCommand(cmd);
+  if (!result || !result.ok) {
+    commandStatus = 'error';
+    appendCommandOutput(
+      `\n[gagal] ${(result && result.error) || 'Command gagal dijalankan.'}\n`
+    );
+    updateCommandUi();
+  }
+}
+
+async function stopLinuxCommand() {
+  await bridge.stopCommand();
+}
+
+async function clearCommandOutput() {
+  await bridge.clearCommand();
+  commandBuffer = '';
+  $('cmdOutput').textContent = 'Pilih command untuk dijalankan…';
+}
+
+function runCustomCommand() {
+  const input = $('cmdInput');
+  const value = input.value.trim();
+  if (!value) return;
+  input.value = '';
+  runLinuxCommand(value);
+}
+
+// ---------------------------------------------------------------- monitoring
+
+function updateMonitorUi() {
+  $('monitorDot').className = `status-dot ${
+    monitorRunning ? 'running' : monitorError ? 'error' : 'stopped'
+  }`;
+  $('monitorLabel').textContent = monitorRunning
+    ? 'btop berjalan'
+    : monitorError
+    ? 'btop error'
+    : 'btop berhenti';
+}
+
+function ensureMonitorTerminal() {
+  if (monitorTerm) {
+    try {
+      monitorFit.fit();
+    } catch {
+      /* ignore */
+    }
+    monitorTerm.focus();
+    return;
+  }
+
+  const container = $('monitorTerminal');
+  if (!container || typeof Terminal === 'undefined') {
+    monitorError = 'Terminal (xterm.js) tidak termuat.';
+    updateMonitorUi();
+    return;
+  }
+
+  monitorTerm = new Terminal({
+    cursorBlink: true,
+    fontSize: 13,
+    fontFamily:
+      '"JetBrains Mono", "Fira Code", "DejaVu Sans Mono", monospace',
+    scrollback: 2000,
+    theme: {
+      background: '#05070a',
+      foreground: '#b7c6d8',
+      cursor: '#2fd6ff',
+      selectionBackground: 'rgba(47, 214, 255, 0.25)',
+    },
+  });
+
+  monitorFit = new FitAddon.FitAddon();
+  monitorTerm.loadAddon(monitorFit);
+  monitorTerm.open(container);
+  monitorFit.fit();
+
+  if (monitorBuffer) monitorTerm.write(monitorBuffer);
+  if (monitorError) {
+    monitorTerm.write(`\r\n\x1b[31m[${monitorError}]\x1b[0m\r\n`);
+  }
+
+  monitorTerm.onData((data) => bridge.monitorInput(data));
+
+  const observer = new ResizeObserver(() => {
+    try {
+      monitorFit.fit();
+      bridge.monitorResize(monitorTerm.cols, monitorTerm.rows);
+    } catch {
+      /* ignore */
+    }
+  });
+  observer.observe(container);
+
+  monitorTerm.focus();
+  bridge.monitorResize(monitorTerm.cols, monitorTerm.rows);
+}
+
+function renderMonitor() {
+  ensureMonitorTerminal();
+  updateMonitorUi();
+}
+
+async function restartMonitor() {
+  const result = await bridge.monitorRestart();
+
+  if (!result || !result.ok) {
+    monitorRunning = false;
+    monitorError = (result && result.error) || 'Gagal menjalankan btop.';
+    if (monitorTerm) {
+      monitorTerm.write(`\r\n\x1b[31m[${monitorError}]\x1b[0m\r\n`);
+    }
+    updateMonitorUi();
+    return;
+  }
+
+  monitorBuffer = '';
+  monitorError = null;
+  monitorRunning = true;
+
+  if (monitorTerm) {
+    monitorTerm.reset();
+    monitorTerm.focus();
+    bridge.monitorResize(monitorTerm.cols, monitorTerm.rows);
+  }
+
+  updateMonitorUi();
+}
+
 function bindStatic() {
   $('brandHome').addEventListener('click', goHome);
+  $('navCommands').addEventListener('click', openCommands);
+  $('navMonitor').addEventListener('click', openMonitor);
   $('homeAddProjectBtn').addEventListener('click', () => openProjectModal());
   $('backupBtn').addEventListener('click', backupConfig);
   $('restoreBtn').addEventListener('click', restoreConfig);
@@ -1085,6 +1389,21 @@ function bindStatic() {
     await bridge.clearLogs(state.serviceId);
     state.logs[state.serviceId] = '';
     renderLogContent();
+  });
+
+  $('cmdStopBtn').addEventListener('click', stopLinuxCommand);
+  $('cmdClearBtn').addEventListener('click', clearCommandOutput);
+  $('cmdRunCustomBtn').addEventListener('click', runCustomCommand);
+  $('cmdInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      runCustomCommand();
+    }
+  });
+
+  $('monitorRestartBtn').addEventListener('click', restartMonitor);
+  $('monitorFocusBtn').addEventListener('click', () => {
+    if (monitorTerm) monitorTerm.focus();
   });
 
   document.addEventListener('pointerdown', (e) => {
@@ -1124,6 +1443,86 @@ async function init() {
       renderLogHeader();
     }
   });
+
+  bridge.onCommandData((text) => appendCommandOutput(text));
+
+  bridge.onCommandStart(({ command }) => {
+    if ($('cmdTitle').textContent !== command) {
+      commandBuffer = '';
+      $('cmdOutput').textContent = `$ ${command}\n\n`;
+      $('cmdTitle').textContent = command;
+    }
+    commandStatus = 'running';
+    updateCommandUi();
+  });
+
+  bridge.onCommandExit(({ code, signal }) => {
+    commandStatus = code === 0 || signal === 'SIGTERM' ? 'stopped' : 'error';
+    appendCommandOutput(
+      `\n[selesai] ${signal ? `signal ${signal}` : `exit code ${code}`}\n`
+    );
+    updateCommandUi();
+  });
+
+  bridge.onCommandError(({ message }) => {
+    commandStatus = 'error';
+    appendCommandOutput(`\n[error] ${message}\n`);
+    updateCommandUi();
+  });
+
+  bridge.onMonitorData((data) => {
+    monitorBuffer += data;
+    if (monitorBuffer.length > 2000000) {
+      monitorBuffer = monitorBuffer.slice(-1500000);
+    }
+    if (monitorTerm) monitorTerm.write(data);
+  });
+
+  bridge.onMonitorExit(({ exitCode, signal }) => {
+    monitorRunning = false;
+    if (monitorTerm) {
+      monitorTerm.write(
+        `\r\n\x1b[31m[btop berhenti${
+          signal ? ` (signal ${signal})` : ` (exit ${exitCode})`
+        }]\x1b[0m\r\n`
+      );
+    }
+    updateMonitorUi();
+  });
+
+  bridge
+    .monitorReady()
+    .then(async (result) => {
+      if (result && result.ok) {
+        monitorRunning = true;
+        monitorError = null;
+      } else {
+        monitorRunning = false;
+        monitorError = (result && result.error) || 'Gagal menjalankan btop.';
+      }
+      updateMonitorUi();
+
+      // Setelah renderer reload, ambil buffer btop yang sudah berjalan di main.
+      if (!monitorBuffer) {
+        try {
+          const status = await bridge.monitorStatus();
+          if (status && status.buffer) monitorBuffer = status.buffer;
+          if (monitorTerm && monitorBuffer) monitorTerm.write(monitorBuffer);
+          if (monitorTerm && monitorError) {
+            monitorTerm.write(
+              `\r\n\x1b[31m[${monitorError}]\x1b[0m\r\n`
+            );
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+    })
+    .catch((err) => {
+      monitorRunning = false;
+      monitorError = err.message;
+      updateMonitorUi();
+    });
 }
 
 init().catch((err) => {

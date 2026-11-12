@@ -26,6 +26,32 @@ contextBridge.exposeInMainWorld('api', {
   exportConfig: () => ipcRenderer.invoke('config:export'),
   importConfig: () => ipcRenderer.invoke('config:import'),
 
+  monitorReady: () => ipcRenderer.invoke('monitor:ready'),
+  monitorInput: (data) => ipcRenderer.invoke('monitor:input', data),
+  monitorResize: (cols, rows) =>
+    ipcRenderer.invoke('monitor:resize', cols, rows),
+  monitorRestart: () => ipcRenderer.invoke('monitor:restart'),
+  monitorStatus: () => ipcRenderer.invoke('monitor:status'),
+
+  runCommand: (command) => ipcRenderer.invoke('command:run', command),
+  stopCommand: () => ipcRenderer.invoke('command:stop'),
+  clearCommand: () => ipcRenderer.invoke('command:clear'),
+  commandStatus: () => ipcRenderer.invoke('command:status'),
+
+  onMonitorData: (callback) =>
+    ipcRenderer.on('monitor:data', (_event, payload) => callback(payload)),
+  onMonitorExit: (callback) =>
+    ipcRenderer.on('monitor:exit', (_event, payload) => callback(payload)),
+
+  onCommandData: (callback) =>
+    ipcRenderer.on('command:data', (_event, payload) => callback(payload)),
+  onCommandStart: (callback) =>
+    ipcRenderer.on('command:start', (_event, payload) => callback(payload)),
+  onCommandExit: (callback) =>
+    ipcRenderer.on('command:exit', (_event, payload) => callback(payload)),
+  onCommandError: (callback) =>
+    ipcRenderer.on('command:error', (_event, payload) => callback(payload)),
+
   onLog: (callback) =>
     ipcRenderer.on('service:log', (_event, payload) => callback(payload)),
   onStatus: (callback) =>

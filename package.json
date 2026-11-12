@@ -1,7 +1,7 @@
 {
   "name": "adnandev-app",
   "productName": "ADNANDEV-APP",
-  "version": "1.0.3",
+  "version": "1.0.6",
   "description": "Kelola dan jalankan semua service projek kamu dari satu layar.",
   "main": "electron/main.cjs",
   "author": "AdnanDev",
@@ -14,6 +14,8 @@
     "build:appimage": "npm run version:prepare && electron-builder --linux AppImage"
   },
   "devDependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
     "electron": "^33.0.0",
     "electron-builder": "^25.1.8"
   },
@@ -38,5 +40,8 @@
       "maintainer": "AdnanDev",
       "synopsis": "Kelola dan jalankan semua service projek dari satu layar"
     }
+  },
+  "dependencies": {
+    "node-pty": "^1.1.0"
   }
 }

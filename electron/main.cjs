@@ -6,12 +6,22 @@ const fs = require('node:fs');
 
 const Store = require('./store.cjs');
 const ProcessManager = require('./process-manager.cjs');
+const MonitorManager = require('./monitor.cjs');
+const CommandRunner = require('./command-runner.cjs');
 
 app.setName('ADNANDEV-APP');
 
 let mainWindow = null;
 let store = null;
 let pm = null;
+let monitor = null;
+let runner = null;
+
+function send(channel, payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(channel, payload);
+  }
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -178,6 +188,36 @@ function registerIpc() {
     store.replaceData(parsed);
     return { ok: true };
   });
+
+  ipcMain.handle('monitor:ready', () => monitor.start());
+  ipcMain.handle('monitor:input', (_e, data) => {
+    monitor.write(String(data));
+    return true;
+  });
+  ipcMain.handle('monitor:resize', (_e, cols, rows) => {
+    monitor.resize(Number(cols), Number(rows));
+    return true;
+  });
+  ipcMain.handle('monitor:restart', () => {
+    monitor.stop();
+    return monitor.start();
+  });
+  ipcMain.handle('monitor:status', () => monitor.status());
+
+  ipcMain.handle('command:run', (_e, command) => {
+    const cmd = String(command || '').trim();
+    if (!cmd) return { ok: false, error: 'Command kosong.' };
+    if (cmd.length > 2000) {
+      return { ok: false, error: 'Command terlalu panjang.' };
+    }
+    return runner.run(cmd);
+  });
+  ipcMain.handle('command:stop', () => runner.stop());
+  ipcMain.handle('command:clear', () => {
+    runner.clear();
+    return true;
+  });
+  ipcMain.handle('command:status', () => runner.status());
 }
 
 app.whenReady().then(() => {
@@ -187,6 +227,16 @@ app.whenReady().then(() => {
 
   store = new Store(configPath);
   pm = new ProcessManager();
+  monitor = new MonitorManager();
+  runner = new CommandRunner();
+
+  monitor.on('data', (data) => send('monitor:data', data));
+  monitor.on('exit', (payload) => send('monitor:exit', payload));
+
+  runner.on('data', (data) => send('command:data', data));
+  runner.on('start', (payload) => send('command:start', payload));
+  runner.on('exit', (payload) => send('command:exit', payload));
+  runner.on('error', (payload) => send('command:error', payload));
 
   pm.on('log', ({ id, text }) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -215,4 +265,16 @@ app.on('window-all-closed', () => {
 // Pastikan semua proses service dimatikan saat aplikasi ditutup.
 app.on('before-quit', () => {
   if (pm) pm.stopAll();
+  if (monitor) monitor.stop();
+  if (runner) runner.stop();
 });
+
+// Bersihkan proses juga saat aplikasi dihentikan lewat sinyal (mis. kill).
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(signal, () => {
+    if (pm) pm.stopAll();
+    if (monitor) monitor.stop();
+    if (runner) runner.stop();
+    app.quit();
+  });
+}

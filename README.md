@@ -6,12 +6,23 @@ kamu dari satu layar. Tidak perlu lagi buka banyak tab terminal dan mengetik
 
 ![Beranda](docs/home.png)
 
+![Command Linux](docs/commands.png)
+
+![Monitoring Sistem](docs/monitor.png)
+
 ![Halaman projek](docs/screenshot.png)
 
 ![Swipe untuk memunculkan aksi projek](docs/swipe.png)
 
 ## Fitur
 
+- **Menu tetap di sidebar**
+  - **Command Linux** — 21 command Linux siap pakai (sistem, disk, memori,
+    CPU, jaringan, service, Docker, dll). Cukup klik **Run**, output tampil
+    di panel bawah. Ada juga kolom untuk menjalankan command custom.
+  - **Monitoring Sistem** — `btop` berjalan otomatis saat aplikasi dibuka dan
+    terus hidup sampai aplikasi ditutup. Terminal interaktif langsung di dalam
+    aplikasi, lengkap dengan tombol **Jalankan ulang**.
 - **Halaman Beranda** — klik logo AdnanDev untuk kembali ke Beranda. Menampilkan
   total projek, total service, jumlah service berjalan, dan jumlah error.
 - **Ikon per service** — pilih ikon (globe, server, database, API, docker, dll)
@@ -36,7 +47,11 @@ kamu dari satu layar. Tidak perlu lagi buka banyak tab terminal dan mengetik
 
 ## Menjalankan (mode development)
 
-Butuh Node.js 18+.
+Butuh Node.js 18+ dan `btop` untuk fitur Monitoring Sistem:
+
+```bash
+sudo apt install btop
+```
 
 ```bash
 npm install
@@ -119,6 +134,10 @@ memulihkan konfigurasi secara manual ke file JSON pilihanmu.
 - Command dijalankan lewat shell di folder service (`/bin/sh -c "<command>"`).
 - Proses dijalankan sebagai process group sendiri, sehingga **Stop** bisa
   mematikan parent + child process sekaligus.
+- **Monitoring Sistem** memakai `node-pty` (PTY asli) + `xterm.js`, jadi `btop`
+  tetap interaktif. Proses `btop` ikut dimatikan saat aplikasi ditutup.
+- **Command Linux** berjalan sebagai proses terpisah; output di-stream ke panel
+  bawah. Hanya satu command berjalan dalam satu waktu.
 - Status & PID bersifat runtime (tidak disimpan permanen).
 - Port hanya label/info; pengecekan konflik port belum termasuk.
 
@@ -130,13 +149,18 @@ electron/
   preload.cjs         # bridge aman ke renderer
   store.cjs           # penyimpanan JSON projek & service
   process-manager.cjs # spawn, kill process tree, log, status
+  command-runner.cjs  # menjalankan command Linux
+  monitor.cjs         # PTY btop (node-pty)
 src/
   index.html
   styles.css
   app.js              # UI + interaksi
+  vendor/             # xterm.js + addon-fit (lokal)
 assets/
   logo-original.png   # wordmark AdnanDev (dari logo asli)
   icon.png            # ikon aplikasi (huruf A dari logo)
+scripts/
+  prepare-version.cjs # auto-increment versi patch saat build
 logo-line.webp        # file logo sumber
 PRD.md
 ```
