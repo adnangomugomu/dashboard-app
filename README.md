@@ -14,6 +14,8 @@ kamu dari satu layar. Tidak perlu lagi buka banyak tab terminal dan mengetik
 
 - **Halaman Beranda** — klik logo AdnanDev untuk kembali ke Beranda. Menampilkan
   total projek, total service, jumlah service berjalan, dan jumlah error.
+- **Ikon per service** — pilih ikon (globe, server, database, API, docker, dll)
+  lewat grid di form service. Ikon tampil di kartu dengan badge status kecil.
 - **Restart per service** — satu klik untuk stop lalu run ulang otomatis,
   tanpa perlu klik Stop kemudian Run manual.
 - **Aksi projek ala Android** — tombol **Edit** dan **Hapus** tidak selalu tampil.
@@ -85,6 +87,7 @@ otomatis menjadi `1.2.1`, `1.2.2`, dst. Versi build terakhir dicatat di
 3. Buka projek (klik dari daftar di Beranda atau sidebar), klik **+ Service**.
 4. Isi:
    - **Nama** → `Frontend`
+   - **Ikon** → pilih dari grid (opsional)
    - **Folder** → path folder service (bisa lewat tombol **Pilih…**)
    - **Command** → `npm run dev`, `npm run start:dev`, dll
    - **Port** → opsional, contoh `3000`

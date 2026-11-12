@@ -180,6 +180,7 @@ class Store {
       command: String(data.command).trim(),
       port: data.port ? Number(data.port) : null,
       link: data.link ? String(data.link).trim() : null,
+      icon: data.icon ? String(data.icon).slice(0, 16) : null,
       createdAt: new Date().toISOString(),
     };
     project.services.push(service);
@@ -200,6 +201,9 @@ class Store {
     }
     if (patch.link !== undefined) {
       service.link = patch.link ? String(patch.link).trim() : null;
+    }
+    if (patch.icon !== undefined) {
+      service.icon = patch.icon ? String(patch.icon).slice(0, 16) : null;
     }
     this.save();
     return service;

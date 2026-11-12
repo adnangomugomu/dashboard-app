@@ -630,6 +630,7 @@ button {
 }
 
 .svc-status {
+  position: relative;
   width: 36px;
   height: 36px;
   border-radius: 10px;
@@ -638,6 +639,21 @@ button {
   flex-shrink: 0;
   background: #0b1118;
   border: 1px solid var(--border-soft);
+}
+
+.svc-icon {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.svc-status.has-icon .status-dot {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #0b1118;
+  box-sizing: content-box;
 }
 
 .status-dot {
@@ -887,6 +903,8 @@ button {
 
 .modal {
   width: min(520px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   background: linear-gradient(180deg, #121a24, #0d131b);
   border: 1px solid #2a394b;
   border-radius: 16px;
@@ -963,6 +981,37 @@ button {
 }
 .input-row input {
   flex: 1;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+.icon-option {
+  aspect-ratio: 1;
+  border: 1px solid #26313f;
+  border-radius: 9px;
+  background: #0a0f16;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.icon-option:hover {
+  background: #121a24;
+  border-color: #2c3b4d;
+}
+
+.icon-option.selected {
+  border-color: var(--cyan);
+  background: rgba(47, 214, 255, 0.12);
+  box-shadow: 0 0 0 2px rgba(47, 214, 255, 0.15);
 }
 
 .modal-foot {

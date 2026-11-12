@@ -27,6 +27,24 @@ const COMMANDS = [
   'docker compose up',
 ];
 
+const SERVICE_ICONS = [
+  { id: 'globe', emoji: '🌐', label: 'Website' },
+  { id: 'server', emoji: '🖥️', label: 'Server / Backend' },
+  { id: 'database', emoji: '🗄️', label: 'Database' },
+  { id: 'api', emoji: '🔌', label: 'API' },
+  { id: 'storage', emoji: '📦', label: 'Storage' },
+  { id: 'cloud', emoji: '☁️', label: 'Cloud' },
+  { id: 'docker', emoji: '🐳', label: 'Docker' },
+  { id: 'terminal', emoji: '⌨️', label: 'Terminal / CLI' },
+  { id: 'mobile', emoji: '📱', label: 'Mobile' },
+  { id: 'rocket', emoji: '🚀', label: 'Deploy' },
+  { id: 'bolt', emoji: '⚡', label: 'Realtime' },
+  { id: 'lock', emoji: '🔒', label: 'Auth' },
+  { id: 'chart', emoji: '📊', label: 'Monitoring' },
+  { id: 'gear', emoji: '⚙️', label: 'Worker' },
+  { id: 'fire', emoji: '🔥', label: 'Queue' },
+];
+
 const STATUS_LABEL = {
   stopped: 'Stopped',
   starting: 'Starting',
@@ -487,7 +505,13 @@ function buildServiceCard(service) {
   );
   card.addEventListener('click', () => selectService(service.id));
 
-  const statusWrap = el('div', 'svc-status');
+  const statusWrap = el(
+    'div',
+    `svc-status${service.icon ? ' has-icon' : ''}`
+  );
+  if (service.icon) {
+    statusWrap.append(el('span', 'svc-icon', service.icon));
+  }
   statusWrap.append(el('span', `status-dot ${status}`));
 
   const info = el('div', 'svc-info');
@@ -768,6 +792,37 @@ function makeField(label, input, hint) {
   return wrap;
 }
 
+function makeIconField(selected, onChange) {
+  const wrap = el('div', 'field');
+  wrap.append(el('span', null, 'Ikon service'));
+
+  const grid = el('div', 'icon-grid');
+  const options = [
+    { id: 'none', emoji: '', label: 'Tanpa ikon' },
+    ...SERVICE_ICONS,
+  ];
+
+  for (const option of options) {
+    const btn = el(
+      'button',
+      `icon-option${selected === option.emoji ? ' selected' : ''}`,
+      option.emoji || '∅'
+    );
+    btn.type = 'button';
+    btn.title = option.label;
+    btn.dataset.icon = option.id;
+    btn.addEventListener('click', () => {
+      for (const child of grid.children) child.classList.remove('selected');
+      btn.classList.add('selected');
+      onChange(option.emoji);
+    });
+    grid.append(btn);
+  }
+
+  wrap.append(grid);
+  return wrap;
+}
+
 function mountModal(form, options) {
   closeModal();
 
@@ -911,9 +966,15 @@ function openServiceModal(service) {
     value: isEdit && service.link ? service.link : '',
   });
 
+  let selectedIcon = isEdit && service.icon ? service.icon : '';
+  const iconField = makeIconField(selectedIcon, (value) => {
+    selectedIcon = value;
+  });
+
   const form = el('form', 'modal-form');
   form.append(
     makeField('Nama service', nameInput),
+    iconField,
     makeField('Folder service', pathRow, 'Command akan dijalankan di folder ini.'),
     makeField('Command', commandInput, 'Bisa pilih dari daftar atau ketik sendiri.'),
     makeField('Port (opsional)', portInput, 'Contoh: 3000.'),
@@ -956,7 +1017,14 @@ function openServiceModal(service) {
         }
       }
 
-      const data = { name, path: servicePath, command, port, link: link || null };
+      const data = {
+        name,
+        path: servicePath,
+        command,
+        port,
+        link: link || null,
+        icon: selectedIcon || null,
+      };
 
       if (isEdit) {
         await bridge.updateService(service.id, data);
