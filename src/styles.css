@@ -1077,11 +1077,6 @@ button {
   padding: 0 2px;
 }
 
-.monitor-actions {
-  display: flex;
-  gap: 6px;
-}
-
 .monitor-terminal {
   flex: 1;
   min-height: 0;

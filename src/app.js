@@ -1374,32 +1374,6 @@ function renderMonitor() {
   updateMonitorUi();
 }
 
-async function restartMonitor() {
-  const result = await bridge.monitorRestart();
-
-  if (!result || !result.ok) {
-    monitorRunning = false;
-    monitorError = (result && result.error) || 'Gagal menjalankan btop.';
-    if (monitorTerm) {
-      monitorTerm.write(`\r\n\x1b[31m[${monitorError}]\x1b[0m\r\n`);
-    }
-    updateMonitorUi();
-    return;
-  }
-
-  monitorBuffer = '';
-  monitorError = null;
-  monitorRunning = true;
-
-  if (monitorTerm) {
-    monitorTerm.reset();
-    monitorTerm.focus();
-    bridge.monitorResize(monitorTerm.cols, monitorTerm.rows);
-  }
-
-  updateMonitorUi();
-}
-
 function bindStatic() {
   $('brandHome').addEventListener('click', goHome);
   $('navCommands').addEventListener('click', openCommands);
@@ -1433,11 +1407,6 @@ function bindStatic() {
       e.preventDefault();
       runCustomCommand();
     }
-  });
-
-  $('monitorRestartBtn').addEventListener('click', restartMonitor);
-  $('monitorFocusBtn').addEventListener('click', () => {
-    if (monitorTerm) monitorTerm.focus();
   });
 
   document.addEventListener('pointerdown', (e) => {

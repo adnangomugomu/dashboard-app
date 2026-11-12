@@ -30,7 +30,6 @@ contextBridge.exposeInMainWorld('api', {
   monitorInput: (data) => ipcRenderer.invoke('monitor:input', data),
   monitorResize: (cols, rows) =>
     ipcRenderer.invoke('monitor:resize', cols, rows),
-  monitorRestart: () => ipcRenderer.invoke('monitor:restart'),
   monitorStatus: () => ipcRenderer.invoke('monitor:status'),
 
   runCommand: (command) => ipcRenderer.invoke('command:run', command),

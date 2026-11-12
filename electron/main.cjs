@@ -198,10 +198,6 @@ function registerIpc() {
     monitor.resize(Number(cols), Number(rows));
     return true;
   });
-  ipcMain.handle('monitor:restart', () => {
-    monitor.stop();
-    return monitor.start();
-  });
   ipcMain.handle('monitor:status', () => monitor.status());
 
   ipcMain.handle('command:run', (_e, command) => {

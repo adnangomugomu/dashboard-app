@@ -23,7 +23,7 @@ kamu dari satu layar. Tidak perlu lagi buka banyak tab terminal dan mengetik
     tanpa menyimpan.
   - **Monitoring Sistem** — `btop` berjalan otomatis saat aplikasi dibuka dan
     terus hidup sampai aplikasi ditutup. Terminal interaktif langsung di dalam
-    aplikasi, lengkap dengan tombol **Jalankan ulang**.
+    aplikasi.
 - **Halaman Beranda** — klik logo AdnanDev untuk kembali ke Beranda. Menampilkan
   total projek, total service, jumlah service berjalan, dan jumlah error.
 - **Ikon per service** — pilih ikon (globe, server, database, API, docker, dll)
