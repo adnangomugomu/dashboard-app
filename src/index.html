@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ADNANDEV-APP</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside class="sidebar">
+        <button class="brand" id="brandHome" type="button" title="Ke beranda">
+          <img class="brand-logo" src="../assets/logo-original.png" alt="AdnanDev" />
+        </button>
+
+        <div class="sidebar-head">
+          <span class="sidebar-label">Projek</span>
+          <button class="icon-btn" id="addProjectBtn" title="Tambah projek">+</button>
+        </div>
+
+        <nav id="projectList" class="project-list" aria-label="Daftar projek"></nav>
+
+        <div class="sidebar-tools">
+          <button class="tool-btn" id="backupBtn" title="Simpan salinan konfigurasi ke file">
+            Backup
+          </button>
+          <button class="tool-btn" id="restoreBtn" title="Pulihkan konfigurasi dari file backup">
+            Restore
+          </button>
+        </div>
+
+        <div class="sidebar-foot">
+          <span>ADNANDEV-APP</span>
+          <span class="ver" id="appVersion">v1.0.0</span>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="topbar-title">
+            <h1 id="projectTitle">Belum ada projek</h1>
+            <p id="projectSub">Tambahkan projek untuk mulai mengelola service.</p>
+          </div>
+
+          <div class="topbar-actions" id="projectActions" hidden>
+            <button class="btn ghost" id="runAllBtn">▶ Run All</button>
+            <button class="btn ghost danger" id="stopAllBtn">■ Stop All</button>
+            <button class="btn primary" id="addServiceBtn">+ Service</button>
+          </div>
+        </header>
+
+        <section class="service-area">
+          <div id="homeView" class="home-view" hidden>
+            <div class="stat-grid">
+              <div class="stat-card">
+                <span class="stat-label">Total Projek</span>
+                <strong class="stat-value" id="statProjects">0</strong>
+                <span class="stat-accent accent-cyan"></span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Total Service</span>
+                <strong class="stat-value" id="statServices">0</strong>
+                <span class="stat-accent accent-blue"></span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Berjalan</span>
+                <strong class="stat-value" id="statRunning">0</strong>
+                <span class="stat-accent accent-green"></span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Error</span>
+                <strong class="stat-value" id="statErrors">0</strong>
+                <span class="stat-accent accent-red"></span>
+              </div>
+            </div>
+
+            <div class="home-section">
+              <div class="home-section-head">
+                <h2>Semua Projek</h2>
+                <button class="btn ghost" id="homeAddProjectBtn">+ Tambah Projek</button>
+              </div>
+              <div id="homeProjects" class="home-projects"></div>
+            </div>
+          </div>
+
+          <div id="serviceList" class="service-list"></div>
+
+          <div id="emptyState" class="empty-state" hidden>
+            <div class="empty-orb"></div>
+            <h2 id="emptyTitle">Belum ada service</h2>
+            <p id="emptyText">
+              Tambahkan service pertama (Frontend, Backend, API, Storage, ...).
+            </p>
+            <button class="btn primary" id="emptyActionBtn">+ Tambah Service</button>
+          </div>
+        </section>
+
+        <section class="log-panel" id="logPanel">
+          <div class="log-head">
+            <div class="log-title">
+              <span class="status-dot stopped" id="logDot"></span>
+              <span id="logTitle">Log</span>
+              <span id="logServiceName" class="muted"></span>
+            </div>
+            <div class="log-actions">
+              <button class="btn tiny" id="clearLogBtn">Bersihkan</button>
+            </div>
+          </div>
+          <pre id="logView" class="log-view">Pilih service untuk melihat log…</pre>
+        </section>
+      </main>
+    </div>
+
+    <div id="modalRoot"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

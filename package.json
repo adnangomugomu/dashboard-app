@@ -1,0 +1,42 @@
+{
+  "name": "adnandev-app",
+  "productName": "ADNANDEV-APP",
+  "version": "1.0.1",
+  "description": "Kelola dan jalankan semua service projek kamu dari satu layar.",
+  "main": "electron/main.cjs",
+  "author": "AdnanDev",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "version:prepare": "node scripts/prepare-version.cjs",
+    "build": "npm run version:prepare && electron-builder --linux",
+    "build:appimage": "npm run version:prepare && electron-builder --linux AppImage"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.adnandev.app",
+    "productName": "ADNANDEV-APP",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/icon.png",
+      "category": "Development",
+      "maintainer": "AdnanDev",
+      "synopsis": "Kelola dan jalankan semua service projek dari satu layar"
+    }
+  }
+}
