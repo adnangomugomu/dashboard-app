@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('api', {
 
   pickFolder: () => ipcRenderer.invoke('dialog:pick-folder'),
   openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
+  openPath: (target) => ipcRenderer.invoke('shell:open-path', target),
 
   exportConfig: () => ipcRenderer.invoke('config:export'),
   importConfig: () => ipcRenderer.invoke('config:import'),

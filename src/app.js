@@ -644,6 +644,17 @@ function buildServiceCard(service) {
     stopService(service.id);
   });
 
+  const folderBtn = el('button', 'btn tiny', '📂');
+  folderBtn.title = 'Buka folder service';
+  folderBtn.disabled = !service.path;
+  folderBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const result = await bridge.openPath(service.path);
+    if (!result || !result.ok) {
+      toast((result && result.error) || 'Gagal membuka folder.', 'error');
+    }
+  });
+
   const editBtn = el('button', 'btn tiny', '✎');
   editBtn.title = 'Ubah service';
   editBtn.addEventListener('click', (e) => {
@@ -658,7 +669,7 @@ function buildServiceCard(service) {
     deleteService(service);
   });
 
-  actions.append(runBtn, restartBtn, stopBtn, editBtn, delBtn);
+  actions.append(runBtn, restartBtn, stopBtn, folderBtn, editBtn, delBtn);
   card.append(statusWrap, info, actions);
   return card;
 }

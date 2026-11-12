@@ -113,6 +113,24 @@ function registerIpc() {
     }
   });
 
+  ipcMain.handle('shell:open-path', async (_e, rawPath) => {
+    const target = String(rawPath || '').trim();
+    if (!target) {
+      return { ok: false, error: 'Folder service belum diatur.' };
+    }
+    try {
+      const stat = await fs.promises.stat(target);
+      if (!stat.isDirectory()) {
+        return { ok: false, error: 'Path bukan sebuah folder.' };
+      }
+    } catch {
+      return { ok: false, error: 'Folder tidak ditemukan.' };
+    }
+    const error = await shell.openPath(target);
+    if (error) return { ok: false, error };
+    return { ok: true };
+  });
+
   ipcMain.handle('dialog:pick-folder', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: 'Pilih folder service',
