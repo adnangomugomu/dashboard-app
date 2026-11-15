@@ -425,9 +425,8 @@ button {
   letter-spacing: 0.06em;
 }
 
-.server-badge.is-production {
-  border-color: rgba(53, 211, 154, 0.35);
-  color: #35d39a;
+.server-badge[hidden] {
+  display: none;
 }
 
 .sidebar-tools {

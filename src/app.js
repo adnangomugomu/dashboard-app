@@ -1578,13 +1578,14 @@ async function refreshServerStatus() {
 
     host.textContent = tampilkanHost(hasil.url);
     host.title = hasil.url;
-    badge.textContent =
-      hasil.mode === 'production'
-        ? 'PROD'
-        : hasil.mode === 'development'
-          ? 'DEV'
-          : 'CUSTOM';
-    badge.classList.toggle('is-production', hasil.mode === 'production');
+
+    // Badge hanya informatif untuk mode non-production; build production
+    // tidak menampilkan badge apa pun.
+    const tampilBadge = hasil.mode !== 'production';
+    badge.hidden = !tampilBadge;
+    if (tampilBadge) {
+      badge.textContent = hasil.mode === 'development' ? 'DEV' : 'CUSTOM';
+    }
 
     if (hasil.ok) {
       dot.className = 'server-dot is-online';
