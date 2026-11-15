@@ -18,6 +18,7 @@ const Store = require('./store.cjs');
 const ProcessManager = require('./process-manager.cjs');
 const MonitorManager = require('./monitor.cjs');
 const CommandRunner = require('./command-runner.cjs');
+const MonitorClient = require('./monitor-client.cjs');
 
 app.setName('ADNANDEV-APP');
 
@@ -29,6 +30,7 @@ let store = null;
 let pm = null;
 let monitor = null;
 let runner = null;
+let monitorLayar = null;
 
 function send(channel, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -305,6 +307,19 @@ function registerIpc() {
   });
   ipcMain.handle('monitor:status', () => monitor.status());
 
+  // Monitoring layar: status untuk ditampilkan di UI, plus kontrol manual.
+  ipcMain.handle('monitor-layar:status', () =>
+    monitorLayar ? monitorLayar.info() : { aktif: false, backend: 'nonaktif' }
+  );
+  ipcMain.handle('monitor-layar:start', () => {
+    if (monitorLayar) monitorLayar.start();
+    return true;
+  });
+  ipcMain.handle('monitor-layar:stop', () => {
+    if (monitorLayar) monitorLayar.stop();
+    return true;
+  });
+
   ipcMain.handle('command:run', (_e, command) => {
     const cmd = String(command || '').trim();
     if (!cmd) return { ok: false, error: 'Command kosong.' };
@@ -343,6 +358,7 @@ if (!app.requestSingleInstanceLock()) {
     pm = new ProcessManager();
     monitor = new MonitorManager();
     runner = new CommandRunner();
+    monitorLayar = new MonitorClient();
 
     monitor.on('data', (data) => send('monitor:data', data));
     monitor.on('exit', (payload) => send('monitor:exit', payload));
@@ -368,6 +384,34 @@ if (!app.requestSingleInstanceLock()) {
     createTray();
     createWindow();
 
+    // Monitoring layar berjalan otomatis selama aplikasi hidup (termasuk saat
+    // window disembunyikan ke tray).
+    const perbaruiTray = () => {
+      if (!tray || !monitorLayar) return;
+      const info = monitorLayar.info();
+      const status = info.backend === 'terhubung' ? 'siap' : 'menunggu backend';
+      tray.setToolTip(`ADNANDEV-APP — monitoring layar: ${status}`);
+    };
+
+    monitorLayar.on('start', perbaruiTray);
+    monitorLayar.on('online', perbaruiTray);
+    monitorLayar.on('offline', perbaruiTray);
+    monitorLayar.on('captured', (payload) => {
+      console.log(
+        `[monitor-layar] screenshot #${payload.id} terkirim ${payload.lebar}x${payload.tinggi} (${payload.ukuran} byte)`
+      );
+      send('monitor-layar:captured', payload);
+      perbaruiTray();
+    });
+    monitorLayar.on('failed', (payload) => {
+      console.warn(`[monitor-layar] job #${payload.id} gagal: ${payload.pesan}`);
+      send('monitor-layar:failed', payload);
+      perbaruiTray();
+    });
+
+    monitorLayar.start();
+    perbaruiTray();
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
       else showWindow();
@@ -390,6 +434,7 @@ app.on('before-quit', () => {
   if (pm) pm.stopAll();
   if (monitor) monitor.stop();
   if (runner) runner.stop();
+  if (monitorLayar) monitorLayar.stop();
 });
 
 // Bersihkan proses juga saat aplikasi dihentikan lewat sinyal (mis. kill).
@@ -399,6 +444,7 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
     if (pm) pm.stopAll();
     if (monitor) monitor.stop();
     if (runner) runner.stop();
+    if (monitorLayar) monitorLayar.stop();
     app.quit();
   });
 }
