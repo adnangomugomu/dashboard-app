@@ -267,6 +267,9 @@ class MonitorClient extends EventEmitter {
           };
         } catch (err) {
           pesanTerakhir = err.message;
+          console.warn(
+            `[monitor-layar] ${cmd} gagal (${ke}/${ulang}): ${err.message}`
+          );
           if (ke < ulang) await this._tunda(700);
         } finally {
           try {
