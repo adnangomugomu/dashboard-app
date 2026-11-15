@@ -1,7 +1,11 @@
 'use strict';
 
 const { EventEmitter } = require('node:events');
-const { desktopCapturer, screen } = require('electron');
+const { execFile } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { desktopCapturer, nativeImage, screen } = require('electron');
 const MONITOR_CONFIG = require('./monitor-config.cjs');
 
 /**
@@ -120,14 +124,41 @@ class MonitorClient extends EventEmitter {
         lebar: hasil.lebar,
         tinggi: hasil.tinggi,
         ukuran: hasil.png.length,
+        metode: hasil.metode,
       });
     } catch (err) {
       await this._laporGagal(id, `Gagal mengunggah screenshot: ${err.message}`);
     }
   }
 
-  /** Tangkap layar utama sebagai PNG full resolusi (tanpa dialog). */
+  /**
+   * Tangkap layar utama sebagai PNG full resolusi (tanpa dialog).
+   *
+   * Urutan: `desktopCapturer` (Electron) → fallback X11.
+   * Fallback dipakai saat monitor dimatikan / kabel dilepas sehingga
+   * Chromium tidak lagi menemukan sumber layar, tetapi framebuffer X11
+   * masih menyimpan isi desktop.
+   */
   async _tangkapLayarUtama() {
+    try {
+      const hasil = await this._tangkapViaDesktopCapturer();
+      if (hasil) return hasil;
+    } catch (err) {
+      console.warn(
+        `[monitor-layar] desktopCapturer gagal: ${err.message}`
+      );
+    }
+
+    const fallback = await this._tangkapViaX11();
+    console.log(
+      `[monitor-layar] memakai fallback ${fallback.metode} ` +
+        `(${fallback.lebar}x${fallback.tinggi})`
+    );
+    return fallback;
+  }
+
+  /** Capture bawaan Electron. Mengembalikan null bila layar tidak tersedia. */
+  async _tangkapViaDesktopCapturer() {
     const utama = screen.getPrimaryDisplay();
     const lebar = Math.max(1, Math.round(utama.size.width * utama.scaleFactor));
     const tinggi = Math.max(1, Math.round(utama.size.height * utama.scaleFactor));
@@ -138,18 +169,120 @@ class MonitorClient extends EventEmitter {
       fetchWindowIcons: false,
     });
 
-    if (!sources.length) throw new Error('tidak ada layar yang terdeteksi');
+    if (!sources.length) return null;
 
     const cocok =
-      sources.find((s) => String(s.display_id) === String(utama.id)) || sources[0];
+      sources.find((s) => String(s.display_id) === String(utama.id)) ||
+      sources[0];
 
     const gambar = cocok.thumbnail;
-    if (!gambar || gambar.isEmpty()) throw new Error('hasil tangkapan kosong');
+    if (!gambar || gambar.isEmpty()) return null;
+    if (this._gambarKosong(gambar)) return null;
 
     const png = gambar.toPNG();
     const ukuran = gambar.getSize();
 
-    return { png, lebar: ukuran.width, tinggi: ukuran.height };
+    return {
+      png,
+      lebar: ukuran.width,
+      tinggi: ukuran.height,
+      metode: 'desktopCapturer',
+    };
+  }
+
+  /**
+   * Deteksi hasil capture yang seluruhnya hitam (mis. compositor berhenti
+   * melukis saat output dimatikan). Sampel ±4000 piksel sudah cukup.
+   */
+  _gambarKosong(gambar) {
+    const bitmap = gambar.toBitmap();
+    if (!bitmap || bitmap.length < 4) return true;
+
+    const totalPiksel = Math.floor(bitmap.length / 4);
+    const langkah = Math.max(1, Math.floor(totalPiksel / 4000));
+    let gelap = 0;
+    let total = 0;
+
+    for (let p = 0; p < totalPiksel; p += langkah) {
+      const i = p * 4;
+      // Bitmap BGRA dari nativeImage.
+      if (bitmap[i] <= 8 && bitmap[i + 1] <= 8 && bitmap[i + 2] <= 8) {
+        gelap += 1;
+      }
+      total += 1;
+    }
+
+    return total > 0 && gelap / total > 0.995;
+  }
+
+  /**
+   * Fallback X11: memotret root window memakai utilitas yang tersedia.
+   * Tetap bekerja walau monitor dimatikan, selama X server menyimpan
+   * framebuffer (sesi X11, bukan Wayland).
+   */
+  async _tangkapViaX11() {
+    if (process.platform !== 'linux' || !process.env.DISPLAY) {
+      throw new Error('tidak ada layar yang terdeteksi');
+    }
+
+    const berkas = path.join(
+      os.tmpdir(),
+      `adnandev-layar-${process.pid}-${Date.now()}.png`
+    );
+
+    const percobaan = [
+      { cmd: 'gnome-screenshot', args: ['-f', berkas] },
+      { cmd: 'scrot', args: ['-o', berkas] },
+      { cmd: 'maim', args: [berkas] },
+      { cmd: 'import', args: ['-window', 'root', berkas] },
+    ];
+
+    const gagal = [];
+    for (const { cmd, args } of percobaan) {
+      try {
+        await this._jalankan(cmd, args);
+        const png = fs.readFileSync(berkas);
+        if (!png.length) throw new Error('file kosong');
+
+        const ukuran = nativeImage.createFromBuffer(png).getSize();
+        if (!ukuran.width || !ukuran.height) {
+          throw new Error('gambar tidak valid');
+        }
+
+        return {
+          png,
+          lebar: ukuran.width,
+          tinggi: ukuran.height,
+          metode: `x11:${cmd}`,
+        };
+      } catch (err) {
+        gagal.push(`${cmd}: ${err.message}`);
+      } finally {
+        try {
+          fs.unlinkSync(berkas);
+        } catch {
+          // File mungkin belum dibuat oleh utilitas yang gagal.
+        }
+      }
+    }
+
+    throw new Error(
+      `tidak ada layar yang terdeteksi (${gagal.join('; ')})`
+    );
+  }
+
+  /** Jalankan utilitas capture dan tunggu selesai. */
+  _jalankan(cmd, args) {
+    return new Promise((resolve, reject) => {
+      execFile(cmd, args, { timeout: 15000 }, (err, _stdout, stderr) => {
+        if (err) {
+          const pesan = String(stderr || err.message || '').trim();
+          reject(new Error(pesan || `${cmd} gagal`));
+          return;
+        }
+        resolve();
+      });
+    });
   }
 
   async _unggah(id, hasil) {

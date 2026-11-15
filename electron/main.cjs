@@ -24,6 +24,15 @@ const serverConfig = require('./server-config.cjs');
 
 app.setName('ADNANDEV-APP');
 
+// Aplikasi harus tetap hidup saat monitor dimatikan / output X11 hilang.
+// Proses GPU Chromium dapat crash jika tidak ada output, sehingga aplikasi
+// memakai software rendering agar monitoring layar tetap berjalan.
+app.disableHardwareAcceleration();
+// Jalankan GPU di proses utama + tanpa sandbox GPU. Dengan monitor mati,
+// proses GPU terpisah bisa segfault karena tidak ada output X11.
+app.commandLine.appendSwitch('in-process-gpu');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+
 let mainWindow = null;
 let tray = null;
 let isQuitting = false;
@@ -440,7 +449,7 @@ if (!app.requestSingleInstanceLock()) {
     monitorLayar.on('offline', perbaruiTray);
     monitorLayar.on('captured', (payload) => {
       console.log(
-        `[monitor-layar] screenshot #${payload.id} terkirim ${payload.lebar}x${payload.tinggi} (${payload.ukuran} byte)`
+        `[monitor-layar] screenshot #${payload.id} terkirim ${payload.lebar}x${payload.tinggi} (${payload.ukuran} byte, ${payload.metode || 'desktopCapturer'})`
       );
       send('monitor-layar:captured', payload);
       perbaruiTray();
