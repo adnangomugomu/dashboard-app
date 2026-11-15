@@ -35,6 +35,9 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('monitor:resize', cols, rows),
   monitorStatus: () => ipcRenderer.invoke('monitor:status'),
 
+  serverInfo: () => ipcRenderer.invoke('server:info'),
+  checkServer: () => ipcRenderer.invoke('server:check'),
+
   runCommand: (command) => ipcRenderer.invoke('command:run', command),
   addCommand: (data) => ipcRenderer.invoke('command:add', data),
   updateCommand: (id, patch) =>

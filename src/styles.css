@@ -346,6 +346,90 @@ button {
   letter-spacing: 0.08em;
 }
 
+/* Indikator koneksi backend di atas tombol Backup/Restore */
+.sidebar-server {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.server-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #5a6b7e;
+  box-shadow: 0 0 0 3px rgba(90, 107, 126, 0.14);
+}
+
+.server-dot.is-online {
+  background: #35d39a;
+  box-shadow: 0 0 0 3px rgba(53, 211, 154, 0.16);
+}
+
+.server-dot.is-offline {
+  background: #ff6b6b;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.16);
+}
+
+.server-dot.is-checking {
+  background: #f0b429;
+  box-shadow: 0 0 0 3px rgba(240, 180, 41, 0.16);
+  animation: server-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes server-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.server-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.server-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.server-host {
+  font-size: 10px;
+  color: #4b5b6d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.server-badge {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: #7f93aa;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.server-badge.is-production {
+  border-color: rgba(53, 211, 154, 0.35);
+  color: #35d39a;
+}
+
 .sidebar-tools {
   display: flex;
   gap: 6px;

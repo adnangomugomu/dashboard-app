@@ -19,6 +19,7 @@ const ProcessManager = require('./process-manager.cjs');
 const MonitorManager = require('./monitor.cjs');
 const CommandRunner = require('./command-runner.cjs');
 const MonitorClient = require('./monitor-client.cjs');
+const serverConfig = require('./server-config.cjs');
 
 app.setName('ADNANDEV-APP');
 
@@ -318,6 +319,43 @@ function registerIpc() {
   ipcMain.handle('monitor-layar:stop', () => {
     if (monitorLayar) monitorLayar.stop();
     return true;
+  });
+
+  // Info & status koneksi backend (indikator di sidebar).
+  ipcMain.handle('server:info', () => {
+    const { url, mode, isPackaged } = serverConfig.info();
+    return { url, mode, modeLabel: serverConfig.modeLabel(mode), isPackaged };
+  });
+
+  ipcMain.handle('server:check', async () => {
+    const { url, mode } = serverConfig.info();
+    const mulai = Date.now();
+    const dasar = {
+      url,
+      mode,
+      modeLabel: serverConfig.modeLabel(mode),
+      checkedAt: new Date().toISOString(),
+    };
+
+    try {
+      const res = await fetch(`${url}/monitor/ping`, {
+        signal: AbortSignal.timeout(4000),
+      });
+      return {
+        ...dasar,
+        // Server dianggap terhubung bila membalas apa pun kecuali error server.
+        ok: res.status > 0 && res.status < 500,
+        status: res.status,
+        latencyMs: Date.now() - mulai,
+      };
+    } catch (err) {
+      return {
+        ...dasar,
+        ok: false,
+        status: 0,
+        error: err && err.message ? err.message : String(err),
+      };
+    }
   });
 
   ipcMain.handle('command:run', (_e, command) => {

@@ -1551,6 +1551,63 @@ function bindStatic() {
   });
 }
 
+let serverTimer = null;
+
+function tampilkanHost(url) {
+  return String(url || '')
+    .replace(/^https?:\/\//, '')
+    .replace(/\/+$/, '');
+}
+
+/**
+ * Indikator koneksi backend di sidebar.
+ *
+ * URL mengikuti mode aplikasi (lihat electron/server-config.cjs):
+ * development -> URL lokal, build production -> URL API.
+ */
+async function refreshServerStatus() {
+  const kotak = $('serverStatus');
+  const dot = $('serverDot');
+  const label = $('serverLabel');
+  const host = $('serverHost');
+  const badge = $('serverBadge');
+  if (!kotak || !dot || !label || !host || !badge) return;
+
+  try {
+    const hasil = await bridge.checkServer();
+
+    host.textContent = tampilkanHost(hasil.url);
+    host.title = hasil.url;
+    badge.textContent =
+      hasil.mode === 'production'
+        ? 'PROD'
+        : hasil.mode === 'development'
+          ? 'DEV'
+          : 'CUSTOM';
+    badge.classList.toggle('is-production', hasil.mode === 'production');
+
+    if (hasil.ok) {
+      dot.className = 'server-dot is-online';
+      label.textContent =
+        hasil.latencyMs != null
+          ? `Terhubung · ${hasil.latencyMs} ms`
+          : 'Terhubung';
+      kotak.title = `${hasil.url} (${hasil.modeLabel})\nTerhubung — HTTP ${hasil.status}`;
+    } else {
+      dot.className = 'server-dot is-offline';
+      label.textContent = 'Tidak terhubung';
+      kotak.title = `${hasil.url} (${hasil.modeLabel})\n${
+        hasil.error || `HTTP ${hasil.status}`
+      }`;
+    }
+  } catch (err) {
+    dot.className = 'server-dot is-offline';
+    label.textContent = 'Tidak terhubung';
+    host.textContent = '—';
+    kotak.title = err && err.message ? err.message : 'Gagal memeriksa server';
+  }
+}
+
 async function init() {
   bindStatic();
   state.data = await bridge.getData();
@@ -1560,6 +1617,11 @@ async function init() {
     $('appVersion').textContent = `v${version}`;
   } catch {
     /* abaikan */
+  }
+
+  refreshServerStatus();
+  if (!serverTimer) {
+    serverTimer = setInterval(refreshServerStatus, 15000);
   }
 
   renderAll();

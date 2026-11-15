@@ -34,8 +34,11 @@ function bacaToken() {
 }
 
 const MONITOR_CONFIG = {
-  // Backend NestJS. Emulator Android memakai 10.0.2.2, desktop cukup localhost.
-  apiBaseUrl: process.env.ADNANDEV_MONITOR_API || 'http://127.0.0.1:3002',
+  // Backend NestJS mengikuti mode aplikasi: lokal saat development,
+  // URL API saat build production (lihat server-config.cjs).
+  get apiBaseUrl() {
+    return require('./server-config.cjs').info().url;
+  },
 
   // Diisi saat runtime lewat bacaToken(); null = fitur nonaktif.
   get token() {

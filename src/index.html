@@ -40,6 +40,15 @@
 
         <nav id="projectList" class="project-list" aria-label="Daftar projek"></nav>
 
+        <div class="sidebar-server" id="serverStatus" title="Status koneksi ke server backend">
+          <span class="server-dot is-checking" id="serverDot"></span>
+          <span class="server-info">
+            <span class="server-label" id="serverLabel">Menghubungkan…</span>
+            <span class="server-host" id="serverHost">—</span>
+          </span>
+          <span class="server-badge" id="serverBadge">DEV</span>
+        </div>
+
         <div class="sidebar-tools">
           <button class="tool-btn" id="backupBtn" title="Simpan salinan konfigurasi ke file">
             Backup
