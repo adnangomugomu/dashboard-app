@@ -230,40 +230,53 @@ class MonitorClient extends EventEmitter {
       `adnandev-layar-${process.pid}-${Date.now()}.png`
     );
 
+    // `ulang` > 1 untuk utilitas utama: kegagalan sesaat (mis. X sedang
+    // sibuk saat monitor baru dimatikan) sering berhasil pada percobaan kedua.
     const percobaan = [
-      { cmd: 'gnome-screenshot', args: ['-f', berkas] },
-      { cmd: 'scrot', args: ['-o', berkas] },
-      { cmd: 'maim', args: [berkas] },
-      { cmd: 'import', args: ['-window', 'root', berkas] },
+      { cmd: 'gnome-screenshot', args: ['-f', berkas], ulang: 3 },
+      { cmd: 'scrot', args: ['-o', berkas], ulang: 1 },
+      { cmd: 'maim', args: [berkas], ulang: 1 },
+      { cmd: 'import', args: ['-window', 'root', berkas], ulang: 1 },
     ];
 
     const gagal = [];
-    for (const { cmd, args } of percobaan) {
-      try {
-        await this._jalankan(cmd, args);
-        const png = fs.readFileSync(berkas);
-        if (!png.length) throw new Error('file kosong');
-
-        const ukuran = nativeImage.createFromBuffer(png).getSize();
-        if (!ukuran.width || !ukuran.height) {
-          throw new Error('gambar tidak valid');
-        }
-
-        return {
-          png,
-          lebar: ukuran.width,
-          tinggi: ukuran.height,
-          metode: `x11:${cmd}`,
-        };
-      } catch (err) {
-        gagal.push(`${cmd}: ${err.message}`);
-      } finally {
+    for (const { cmd, args, ulang } of percobaan) {
+      let pesanTerakhir = '';
+      for (let ke = 1; ke <= ulang; ke++) {
         try {
-          fs.unlinkSync(berkas);
-        } catch {
-          // File mungkin belum dibuat oleh utilitas yang gagal.
+          try {
+            fs.unlinkSync(berkas);
+          } catch {
+            // Belum ada file dari percobaan sebelumnya.
+          }
+
+          await this._jalankan(cmd, args);
+          const png = fs.readFileSync(berkas);
+          if (!png.length) throw new Error('file kosong');
+
+          const ukuran = nativeImage.createFromBuffer(png).getSize();
+          if (!ukuran.width || !ukuran.height) {
+            throw new Error('gambar tidak valid');
+          }
+
+          return {
+            png,
+            lebar: ukuran.width,
+            tinggi: ukuran.height,
+            metode: `x11:${cmd}`,
+          };
+        } catch (err) {
+          pesanTerakhir = err.message;
+          if (ke < ulang) await this._tunda(700);
+        } finally {
+          try {
+            fs.unlinkSync(berkas);
+          } catch {
+            // File mungkin belum dibuat oleh utilitas yang gagal.
+          }
         }
       }
+      gagal.push(`${cmd}: ${pesanTerakhir}`);
     }
 
     throw new Error(
@@ -274,15 +287,41 @@ class MonitorClient extends EventEmitter {
   /** Jalankan utilitas capture dan tunggu selesai. */
   _jalankan(cmd, args) {
     return new Promise((resolve, reject) => {
-      execFile(cmd, args, { timeout: 15000 }, (err, _stdout, stderr) => {
+      execFile(cmd, args, { timeout: 30000 }, (err, _stdout, stderr) => {
         if (err) {
-          const pesan = String(stderr || err.message || '').trim();
-          reject(new Error(pesan || `${cmd} gagal`));
+          const alasan = err.killed
+            ? 'waktu habis'
+            : this._pesanRingkas(stderr) ||
+              (err.code ? `exit ${err.code}` : err.message);
+          reject(new Error(alasan));
           return;
         }
         resolve();
       });
     });
+  }
+
+  /**
+   * Ringkas stderr: buang peringatan GTK yang tidak penting dan ambil baris
+   * error terakhir, supaya pesan di aplikasi Flutter tetap bisa dibaca.
+   */
+  _pesanRingkas(stderr) {
+    const baris = String(stderr || '')
+      .split('\n')
+      .map((teks) => teks.trim())
+      .filter(Boolean)
+      .filter(
+        (teks) =>
+          !teks.includes('Gtk-WARNING') &&
+          !teks.includes('Theme parsing error')
+      );
+
+    return baris.slice(-2).join(' ').slice(0, 180);
+  }
+
+  /** Jeda sederhana antar percobaan capture. */
+  _tunda(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async _unggah(id, hasil) {
