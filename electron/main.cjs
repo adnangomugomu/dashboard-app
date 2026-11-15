@@ -343,8 +343,9 @@ function registerIpc() {
       });
       return {
         ...dasar,
-        // Server dianggap terhubung bila membalas apa pun kecuali error server.
-        ok: res.status > 0 && res.status < 500,
+        // Hanya balasan sukses (2xx) yang dianggap terhubung; 404/500 berarti
+        // backend belum siap atau URL salah.
+        ok: res.ok,
         status: res.status,
         latencyMs: Date.now() - mulai,
       };
