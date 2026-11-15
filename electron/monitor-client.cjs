@@ -43,6 +43,18 @@ class MonitorClient extends EventEmitter {
 
   start() {
     if (this.timer || this.status.aktif) return;
+
+    if (!this.config.token) {
+      this.status.aktif = false;
+      this.status.backend = 'tanpa-token';
+      this.status.error = 'Token perangkat belum diatur (monitor-token.txt)';
+      console.warn(
+        '[monitor-layar] token perangkat belum diatur; fitur monitoring nonaktif'
+      );
+      this.emit('offline', { ...this.status });
+      return;
+    }
+
     this.berhenti = false;
     this.status.aktif = true;
     this.emit('start', { ...this.status });
