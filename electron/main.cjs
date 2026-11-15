@@ -19,6 +19,7 @@ const ProcessManager = require('./process-manager.cjs');
 const MonitorManager = require('./monitor.cjs');
 const CommandRunner = require('./command-runner.cjs');
 const MonitorClient = require('./monitor-client.cjs');
+const PresenceClient = require('./presence-client.cjs');
 const serverConfig = require('./server-config.cjs');
 
 app.setName('ADNANDEV-APP');
@@ -32,6 +33,7 @@ let pm = null;
 let monitor = null;
 let runner = null;
 let monitorLayar = null;
+let presence = null;
 
 function send(channel, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -398,6 +400,7 @@ if (!app.requestSingleInstanceLock()) {
     monitor = new MonitorManager();
     runner = new CommandRunner();
     monitorLayar = new MonitorClient();
+    presence = new PresenceClient();
 
     monitor.on('data', (data) => send('monitor:data', data));
     monitor.on('exit', (payload) => send('monitor:exit', payload));
@@ -451,6 +454,10 @@ if (!app.requestSingleInstanceLock()) {
     monitorLayar.start();
     perbaruiTray();
 
+    // Ikut terhitung sebagai "pengguna aktif" di aplikasi wedding selama
+    // aplikasi desktop ini berjalan (termasuk saat di tray).
+    presence.start();
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
       else showWindow();
@@ -474,6 +481,7 @@ app.on('before-quit', () => {
   if (monitor) monitor.stop();
   if (runner) runner.stop();
   if (monitorLayar) monitorLayar.stop();
+  if (presence) presence.stop();
 });
 
 // Bersihkan proses juga saat aplikasi dihentikan lewat sinyal (mis. kill).
@@ -484,6 +492,7 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
     if (monitor) monitor.stop();
     if (runner) runner.stop();
     if (monitorLayar) monitorLayar.stop();
+    if (presence) presence.stop();
     app.quit();
   });
 }

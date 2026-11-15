@@ -1,7 +1,7 @@
 {
   "name": "adnandev-app",
   "productName": "ADNANDEV-APP",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Kelola dan jalankan semua service projek kamu dari satu layar.",
   "main": "electron/main.cjs",
   "author": "AdnanDev",
@@ -42,6 +42,7 @@
     }
   },
   "dependencies": {
-    "node-pty": "^1.1.0"
+    "node-pty": "^1.1.0",
+    "socket.io-client": "^4.8.4"
   }
 }
